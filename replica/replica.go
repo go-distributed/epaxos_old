@@ -31,7 +31,9 @@ func startNewReplica(newid, N int) (r *Replica) {
 	for i := 0; i < N; i++ {
 		r.InstanceMatrix[i] = make([]*Instance, 1024)
 	}
+
 	go r.run()
+
 	return r
 }
 
