@@ -8,16 +8,24 @@ import (
 
 type DummySM bool
 
-func (d *DummySM) Execute(c Command) (interface{}, error) {
-	if bytes.Compare(c, Command("error")) == 0 {
-		return nil, errors.New("error")
+func (d *DummySM) Execute(c []Command) ([]interface{}, error) {
+	result := make([]interface{}, 0)
+	for i := range c {
+		if bytes.Compare(c[i], Command("error")) == 0 {
+			return nil, errors.New("error")
+		}
+		result = append(result, "ok")
 	}
-	return "ok", nil
+	return result, nil
 }
 
-func (d *DummySM) IsConflict(c1 Command, c2 Command) bool {
-	if bytes.Compare(c1, c2) == 0 {
-		return true
+func (d *DummySM) HaveConflicts(c1 []Command, c2 []Command) bool {
+	for i := range c1 {
+		for j := range c2 {
+			if bytes.Compare(c1[i], c2[j]) == 0 {
+				return true
+			}
+		}
 	}
 	return false
 }
@@ -44,7 +52,8 @@ func TestCommand(t *testing.T) {
 		f,
 	}
 
-	r, err := ExecuteBatch(dm, q1)
+	sm := StateMachine(dm)
+	r, err := sm.Execute(q1)
 	if err != nil {
 		t.Fatal("should not have error: ", err)
 	}
@@ -55,16 +64,16 @@ func TestCommand(t *testing.T) {
 		}
 	}
 
-	r, err = ExecuteBatch(dm, q2)
+	r, err = sm.Execute(q2)
 	if err == nil {
 		t.Fatal("should have error")
 	}
 
-	if !HaveConflicts(dm, q1, q2) {
+	if !sm.HaveConflicts(q1, q2) {
 		t.Fatal("should have conflict")
 	}
 
-	if HaveConflicts(dm, q1, q3) {
+	if sm.HaveConflicts(q1, q3) {
 		t.Fatal("should not have conflict")
 	}
 }
