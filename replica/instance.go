@@ -1,16 +1,21 @@
 package replica
 
+import (
+	cmd "github.com/go-epaxos/epaxos/command"
+)
+
 const (
-        NONE int8 = iota
-        PREACCEPTED
-        ACCEPTED
-        COMMITTED
-        EXECUTED
+	none int8 = iota
+	preaccepted
+	accepted
+	committed
+	executed
 )
 
 type Instance struct {
-	Cmds   interface{}
-	Seq    int32
-	Deps   []int32
+	Cmds   []cmd.Command
+	Seq    int
+	Deps   []InstanceIdType
 	Status int8
 }
+

@@ -2,49 +2,38 @@ package replica
 
 import (
 	"fmt"
+	"github.com/go-epaxos/epaxos/command"
+	"github.com/go-epaxos/epaxos/command/dummySM"
 )
 
 var _ = fmt.Printf
 
+type InstanceIdType int32
+
 type Replica struct {
 	Id             int
 	N              int
-	InstanceNo     []uint64 // the highes instance number seen for each replica
+	MaxInstanceNum []InstanceIdType // the highes instance number seen for each replica
 	InstanceMatrix [][]*Instance
-
-	// channels for receiving messages
-	ProposeChan   chan *Propose
-	PreAcceptChan chan *PreAccept
+	StateMac       command.StateMachine
 }
 
-func startNewReplica(newid, N int) (r *Replica) {
+func startNewReplica(repId, N int) (r *Replica) {
 	r = &Replica{
-		Id:             newid,
+		Id:             repId,
 		N:              N,
-		InstanceNo:     make([]uint64, N),
+		MaxInstanceNum: make([]InstanceIdType, N),
 		InstanceMatrix: make([][]*Instance, N),
-		// channels for receiving messages
-		ProposeChan:   make(chan *Propose),
-		PreAcceptChan: make(chan *PreAccept),
+		StateMac:       new(dummySM.DummySM),
 	}
 
 	for i := 0; i < N; i++ {
 		r.InstanceMatrix[i] = make([]*Instance, 1024)
 	}
 
-	go r.run()
-
 	return r
 }
 
 func (r *Replica) run() {
-	for {
-		select {
-		case propose := <-r.ProposeChan:
-			r.recvPropose(propose)
-		case preAccept := <-r.PreAcceptChan:
-			r.recvPreAccept(preAccept)
-
-		}
-	}
 }
+
