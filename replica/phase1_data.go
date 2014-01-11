@@ -7,6 +7,7 @@ import (
 const (
 	proposeType = iota
 	preAcceptType
+	acceptType
 )
 
 type Propose struct {

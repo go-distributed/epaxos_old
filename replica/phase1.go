@@ -43,6 +43,7 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 	// TODO: before we send messages, we need to record and sync it in disk/persistent.
 
 	// send PreAccept
+	// TODO: handle timeout
 	preAccept := &PreAccept{
 		cmds:  propose.cmds,
 		seq:   seq,
