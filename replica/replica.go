@@ -36,4 +36,3 @@ func startNewReplica(repId, N int) (r *Replica) {
 
 func (r *Replica) run() {
 }
-
