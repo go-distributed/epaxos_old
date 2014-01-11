@@ -18,4 +18,3 @@ type Instance struct {
 	Deps   []InstanceIdType
 	Status int8
 }
-
