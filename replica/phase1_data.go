@@ -5,22 +5,22 @@ import (
 )
 
 const (
-	ProposeType = iota
-	PreAcceptType
+	proposeType = iota
+	preAcceptType
 )
 
 type Propose struct {
-	Cmds []cmd.Command
+	cmds []cmd.Command
 }
 
 type PreAccept struct {
-	Cmds  []cmd.Command
-	Seq   int
-	Deps  []InstanceIdType
+	cmds  []cmd.Command
+	seq   int
+	deps  []InstanceIdType
 	repId int
-	InsId InstanceIdType
+	insId InstanceIdType
 }
 
 func (*PreAccept) getType() uint8 {
-	return PreAcceptType
+	return preAcceptType
 }

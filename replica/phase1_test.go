@@ -13,7 +13,7 @@ func TestRecvPropose(t *testing.T) {
 	r := startNewReplica(0, 5)
 	messageChan := make(chan Message)
 	propose := &Propose{
-		Cmds: []cmd.Command{
+		cmds: []cmd.Command{
 			cmd.Command("hello"),
 			cmd.Command("world"),
 		},
@@ -24,15 +24,15 @@ func TestRecvPropose(t *testing.T) {
 		message := <-messageChan
 		preAccept := message.(*PreAccept)
 
-		if preAccept.Cmds[0].Compare(propose.Cmds[0]) != 0 ||
-			preAccept.Cmds[1].Compare(propose.Cmds[1]) != 0 {
+		if preAccept.cmds[0].Compare(propose.cmds[0]) != 0 ||
+			preAccept.cmds[1].Compare(propose.cmds[1]) != 0 {
 			t.Fatal("command isn't equal")
 		}
 	}
 
 	// check deps, seq and instance id
 	propose = &Propose{
-		Cmds: []cmd.Command{
+		cmds: []cmd.Command{
 			cmd.Command("hello"),
 			cmd.Command("world"),
 		},
@@ -43,17 +43,17 @@ func TestRecvPropose(t *testing.T) {
 		message := <-messageChan
 		preAccept := message.(*PreAccept)
 
-		if preAccept.Cmds[0].Compare(propose.Cmds[0]) != 0 ||
-			preAccept.Cmds[1].Compare(propose.Cmds[1]) != 0 {
+		if preAccept.cmds[0].Compare(propose.cmds[0]) != 0 ||
+			preAccept.cmds[1].Compare(propose.cmds[1]) != 0 {
 			t.Fatal("command isn't equal")
 		}
-		if preAccept.InsId != 1 {
+		if preAccept.insId != 1 {
 			t.Fatal("instance id should be 1")
 		}
-		if preAccept.Seq != 1 {
+		if preAccept.seq != 1 {
 			t.Fatal("seq should be 1")
 		}
-		if preAccept.Deps[0] != 0 {
+		if preAccept.deps[0] != 0 {
 			t.Fatal("deps[0] should be 0")
 		}
 	}
