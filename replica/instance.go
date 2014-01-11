@@ -13,8 +13,8 @@ const (
 )
 
 type Instance struct {
-	Cmds   []cmd.Command
-	Seq    int
-	Deps   []InstanceIdType
-	Status int8
+	cmds   []cmd.Command
+	seq    int
+	deps   []InstanceIdType
+	status int8
 }

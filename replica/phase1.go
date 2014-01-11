@@ -15,9 +15,9 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 
 		InstId := r.MaxInstanceNum[rep] - 1
 		for ; InstId >= 0; InstId-- {
-			if r.StateMac.HaveConflicts(propose.Cmds, repInst[InstId].Cmds) {
-				if seq <= repInst[InstId].Seq {
-					seq = repInst[InstId].Seq + 1
+			if r.StateMac.HaveConflicts(propose.cmds, repInst[InstId].cmds) {
+				if seq <= repInst[InstId].seq {
+					seq = repInst[InstId].seq + 1
 				}
 				break
 			}
@@ -34,21 +34,21 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 
 	// set cmds
 	r.InstanceMatrix[r.Id][instNo] = &Instance{
-		Cmds:   propose.Cmds,
-		Seq:    seq,
-		Deps:   deps,
-		Status: preaccepted,
+		cmds:   propose.cmds,
+		seq:    seq,
+		deps:   deps,
+		status: preaccepted,
 	}
 
 	// TODO: before we send messages, we need to record and sync it in disk/persistent.
 
 	// send PreAccept
 	preAccept := &PreAccept{
-		Cmds:  propose.Cmds,
-		Seq:   seq,
-		Deps:  deps,
+		cmds:  propose.cmds,
+		seq:   seq,
+		deps:  deps,
 		repId: r.Id,
-		InsId: instNo,
+		insId: instNo,
 	}
 
 	// fast quorum
