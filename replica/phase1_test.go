@@ -1,7 +1,6 @@
 package replica
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
@@ -25,8 +24,8 @@ func TestRecvPropose(t *testing.T) {
 		message := <-messageChan
 		preAccept := message.(*PreAccept)
 
-		if bytes.Compare(preAccept.Cmds[0], propose.Cmds[0]) != 0 ||
-			bytes.Compare(preAccept.Cmds[1], propose.Cmds[1]) != 0 {
+		if preAccept.Cmds[0].Compare(propose.Cmds[0]) != 0 ||
+			preAccept.Cmds[1].Compare(propose.Cmds[1]) != 0 {
 			t.Fatal("command isn't equal")
 		}
 	}
