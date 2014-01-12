@@ -8,7 +8,11 @@ import (
 
 var _ = fmt.Printf
 
-type InstanceIdType int32
+const (
+	conflictNotFound = 0
+)
+
+type InstanceIdType uint64
 
 type Replica struct {
 	Id             int
@@ -29,6 +33,7 @@ func startNewReplica(repId, N int) (r *Replica) {
 
 	for i := 0; i < N; i++ {
 		r.InstanceMatrix[i] = make([]*Instance, 1024)
+		r.MaxInstanceNum[i] = conflictNotFound + 1
 	}
 
 	return r
