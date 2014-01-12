@@ -7,7 +7,12 @@ import (
 const (
 	proposeType = iota
 	preAcceptType
+<<<<<<< HEAD
 	acceptType
+=======
+	preAcceptOKType
+	preAcceptReplyType
+>>>>>>> 42731c4cec2972cb9cb9cd9e122cdfb3ae814e7c
 )
 
 type Propose struct {
@@ -16,7 +21,16 @@ type Propose struct {
 
 type PreAccept struct {
 	cmds  []cmd.Command
-	seq   int
+	deps  []InstanceIdType
+	repId int
+	insId InstanceIdType
+}
+
+type PreAcceptOK struct {
+	insId InstanceIdType
+}
+
+type PreAcceptReply struct {
 	deps  []InstanceIdType
 	repId int
 	insId InstanceIdType
@@ -24,4 +38,10 @@ type PreAccept struct {
 
 func (*PreAccept) getType() uint8 {
 	return preAcceptType
+}
+func (*PreAcceptOK) getType() uint8 {
+	return preAcceptOKType
+}
+func (*PreAcceptReply) getType() uint8 {
+	return preAcceptReplyType
 }
