@@ -14,7 +14,6 @@ const (
 
 type Instance struct {
 	cmds   []cmd.Command
-	seq    int
 	deps   []InstanceIdType
 	status int8
 }

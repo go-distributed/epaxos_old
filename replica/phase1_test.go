@@ -30,7 +30,7 @@ func TestRecvPropose(t *testing.T) {
 		}
 	}
 
-	// check deps, seq and instance id
+	// check deps, and instance id
 	propose = &Propose{
 		cmds: []cmd.Command{
 			cmd.Command("hello"),
@@ -47,14 +47,50 @@ func TestRecvPropose(t *testing.T) {
 			preAccept.cmds[1].Compare(propose.cmds[1]) != 0 {
 			t.Fatal("command isn't equal")
 		}
-		if preAccept.insId != 1 {
-			t.Fatal("instance id should be 1")
+		if preAccept.insId != conflictNotFound+2 {
+			t.Fatal("instance id is wrong")
 		}
-		if preAccept.seq != 1 {
-			t.Fatal("seq should be 1")
-		}
-		if preAccept.deps[0] != 0 {
-			t.Fatal("deps[0] should be 0")
+		if preAccept.deps[0] != conflictNotFound+1 {
+			t.Fatal("deps[0] is wrong")
 		}
 	}
+}
+
+func TestRecvPreAccept(t *testing.T) {
+	r := startNewReplica(0, 5)
+	messageChan := make(chan Message)
+
+	preAccept1 := &PreAccept{
+		cmds:  []cmd.Command{cmd.Command("hello")},
+		deps:  make([]InstanceIdType, 5),
+		repId: 1,
+		insId: conflictNotFound + 1,
+	}
+
+	r.recvPreAccept(preAccept1, messageChan)
+
+	message := <-messageChan
+	if message.getType() != preAcceptOKType {
+		t.Fatal("return type should be preAcceptOK")
+	}
+
+	preAccept2 := &PreAccept{
+		cmds:  []cmd.Command{cmd.Command("hello")},
+		deps:  make([]InstanceIdType, 5),
+		repId: 2,
+		insId: conflictNotFound + 1,
+	}
+
+	r.recvPreAccept(preAccept2, messageChan)
+
+	message = <-messageChan
+	if message.getType() != preAcceptReplyType {
+		t.Fatal("return type should be preAcceptReply")
+	}
+
+	paReply := message.( * PreAcceptReply)
+	if paReply.deps[1] != conflictNotFound+1 {
+		t.Fatal("deps is wrong")
+	}
+
 }

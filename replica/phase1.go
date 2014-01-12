@@ -2,30 +2,17 @@ package replica
 
 import (
 	"fmt"
+	cmd "github.com/go-epaxos/epaxos/command"
 )
 
 var _ = fmt.Printf
 
 func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
-	// update seq, deps
+	// update deps
 	deps := make([]InstanceIdType, r.N)
-	seq := 0
-	for rep := 0; rep < r.N; rep++ {
-		repInst := r.InstanceMatrix[rep]
+	// we need to initiate deps to conflictnotfound. Since it's 0, we keep that assumption.
 
-		InstId := r.MaxInstanceNum[rep] - 1
-		for ; InstId >= 0; InstId-- {
-			if r.StateMac.HaveConflicts(propose.cmds, repInst[InstId].cmds) {
-				if seq <= repInst[InstId].seq {
-					seq = repInst[InstId].seq + 1
-				}
-				break
-			}
-		}
-		// if InstId >= 0, we found conflicted instance;
-		// if InstId == -1, we didn't have any interference;
-		deps[rep] = InstId
-	}
+	deps, _ = r.update(propose.cmds, deps, r.Id)
 
 	// increment instance number
 	instNo := r.MaxInstanceNum[r.Id]
@@ -35,17 +22,15 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 	// set cmds
 	r.InstanceMatrix[r.Id][instNo] = &Instance{
 		cmds:   propose.cmds,
-		seq:    seq,
 		deps:   deps,
 		status: preaccepted,
 	}
 
-	// TODO: before we send messages, we need to record and sync it in disk/persistent.
+	// TODO: before we send the message, we need to record and sync it in disk/persistent.
 
 	// send PreAccept
 	preAccept := &PreAccept{
 		cmds:  propose.cmds,
-		seq:   seq,
 		deps:  deps,
 		repId: r.Id,
 		insId: instNo,
@@ -60,6 +45,64 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 
 }
 
-func (r *Replica) recvPreAccept(preAccept *PreAccept) {
-	return
+func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) {
+	// update
+	deps, changed := r.update(preAccept.cmds, preAccept.deps, preAccept.repId)
+	// set cmd
+	r.InstanceMatrix[preAccept.repId][preAccept.insId] = &Instance{
+		cmds:   preAccept.cmds,
+		deps:   deps,
+		status: preaccepted,
+	}
+	if preAccept.insId >= r.MaxInstanceNum[preAccept.repId] {
+		r.MaxInstanceNum[preAccept.repId] = preAccept.insId + 1
+	}
+	// reply
+	go func() {
+		if !changed {
+			paOK := &PreAcceptOK{
+				insId: preAccept.insId,
+			}
+			messageChan <- paOK
+		} else {
+			paReply := &PreAcceptReply{
+				deps:  deps,
+				repId: preAccept.repId,
+				insId: preAccept.insId,
+			}
+			messageChan <- paReply
+		}
+	}()
+}
+
+func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType,
+	repId int) ([]InstanceIdType, bool) {
+	changed := false
+
+	for rep := 0; rep < r.N; rep++ {
+		if r.Id != repId && rep == repId {
+			continue
+		}
+		repInst := r.InstanceMatrix[rep]
+		InstId := r.MaxInstanceNum[rep] - 1
+
+		for ; InstId > deps[rep]; InstId-- {
+			if repInst[InstId] == nil {
+				continue
+			}
+			// we only need to find the highest instance in conflict
+			if r.StateMac.HaveConflicts(cmds, repInst[InstId].cmds) {
+				changed = true
+				break
+			}
+		}
+		// if InstId > original dep, we found newer conflicted instance;
+		// if InstId = original dep, we didn't find any new conflict;
+		if InstId != deps[rep] {
+			deps[rep] = InstId
+		}
+	}
+
+	return deps, changed
+
 }
