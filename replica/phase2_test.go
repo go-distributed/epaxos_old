@@ -77,7 +77,7 @@ func TestRecvAcceptOk(t *testing.T) {
 	}
 }
 
-func TestRecvAcceptNack(t *testing.T) {
+func TestRecvAcceptNackBallot(t *testing.T) {
 	r := startNewReplica(0, 5)
 	messageChan := make(chan Message, 100)
 	propose := &Propose{

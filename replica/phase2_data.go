@@ -15,12 +15,19 @@ type Accept struct {
 
 type AcceptReply struct {
 	ok     bool
-	ballot uint64
 	repId  int
 	insId  InstanceIdType
+	ballot uint64
+	status uint64
 }
 
 type Commit struct {
+	cmds []cmds.Command
+	seq int
+	deps []InstanceIdType
+	repId int
+	insId InstanceIdType
+	ballot uint64
 }
 
 func (a *Accept) getType() uint8 {
@@ -29,4 +36,8 @@ func (a *Accept) getType() uint8 {
 
 func (a *AcceptReply) getType() uint8 {
 	return acceptReplyType
+}
+
+func (c *Commit) getType() uint8 {
+	return commitType
 }
