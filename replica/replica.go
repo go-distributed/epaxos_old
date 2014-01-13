@@ -40,5 +40,9 @@ func startNewReplica(repId, N int) (r *Replica) {
 	return r
 }
 
+func (r *Replica) fastQuorumSize() int {
+	return r.N - 2
+}
+
 func (r *Replica) run() {
 }
