@@ -18,8 +18,8 @@ func TestSendAccept(t *testing.T) {
 	r.recvPropose(propose, messageChan)
 	r.recvPropose(propose, messageChan)
 
-	for i := 0; i < r.N-1; i++ {
-		<-messageChan
+	for i := 0; i < r.fastQuorumSize(); i++ {
+                <-messageChan
 		<-messageChan
 	}
 	r.sendAccept(r.Id, 1, messageChan)
@@ -52,7 +52,7 @@ func TestRecvAcceptOk(t *testing.T) {
 	r.recvPropose(propose, messageChan)
 	r.recvPropose(propose, messageChan)
 
-	for i := 0; i < r.N-1; i++ {
+	for i := 0; i < r.fastQuorumSize(); i++ {
 		<-messageChan
 		<-messageChan
 	}
@@ -89,7 +89,7 @@ func TestRecvAcceptNackBallot(t *testing.T) {
 	r.recvPropose(propose, messageChan)
 	r.recvPropose(propose, messageChan)
 
-	for i := 0; i < r.N-1; i++ {
+	for i := 0; i < r.fastQuorumSize(); i++ {
 		<-messageChan
 		<-messageChan
 	}

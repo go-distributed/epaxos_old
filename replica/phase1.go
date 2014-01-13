@@ -31,17 +31,16 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 	// TODO: before we send the message, we need to record and sync it in disk/persistent.
 
 	// send PreAccept
-	// TODO: handle timeout
 	preAccept := &PreAccept{
-		cmds:  propose.cmds,
-		deps:  deps,
-		repId: r.Id,
-		insId: instNo,
+		cmds:      propose.cmds,
+		deps:      deps,
+		repId:     r.Id,
+		insId:     instNo,
 	}
 
 	// fast quorum
 	go func() {
-		for i := 0; i < r.N-1; i++ {
+		for i := 0; i < r.fastQuorumSize(); i++ {
 			messageChan <- preAccept
 		}
 	}()
@@ -78,6 +77,18 @@ func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) 
 	}()
 }
 
+func (r *Replica) recvPreAcceptOK(paOK *PreAcceptOK) {
+	inst := r.InstanceMatrix[r.Id][paOK.insId]
+	inst.info.preaccOkCnt++
+	inst.info.preaccCnt++
+}
+
+func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
+	inst := r.InstanceMatrix[r.Id][paReply.insId]
+	inst.info.preaccCnt++
+
+}
+
 func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType,
 	repId int) ([]InstanceIdType, bool) {
 	changed := false
@@ -107,5 +118,4 @@ func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType,
 	}
 
 	return deps, changed
-
 }

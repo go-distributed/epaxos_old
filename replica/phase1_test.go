@@ -20,7 +20,7 @@ func TestRecvPropose(t *testing.T) {
 	}
 	r.recvPropose(propose, messageChan)
 
-	for i := 0; i < r.N-1; i++ {
+	for i := 0; i < r.fastQuorumSize(); i++ {
 		message := <-messageChan
 		preAccept := message.(*PreAccept)
 
@@ -39,7 +39,7 @@ func TestRecvPropose(t *testing.T) {
 	}
 	r.recvPropose(propose, messageChan)
 
-	for i := 0; i < r.N-1; i++ {
+	for i := 0; i < r.fastQuorumSize(); i++ {
 		message := <-messageChan
 		preAccept := message.(*PreAccept)
 
@@ -94,3 +94,5 @@ func TestRecvPreAccept(t *testing.T) {
 	}
 
 }
+
+
