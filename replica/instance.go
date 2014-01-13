@@ -12,6 +12,12 @@ const (
 	executed
 )
 
+// a bookkeeping for infos like maxBallot, # of nack, # of ok, etc
+type InstanceInfo struct {
+	acceptNackCnt int
+	acceptOkCnt   int
+}
+
 type Instance struct {
 	cmds   []cmd.Command
 	deps   []InstanceIdType

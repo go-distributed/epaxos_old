@@ -20,9 +20,9 @@ const (
 	ballotEpochWidth     uint64 = 20
 	ballotBallotWidth    uint64 = 36
 	ballotReplicaIdWidth uint64 = 8
-	ballotEpochMask      uint64 = (1<<ballotEpochWidth - 1) << (ballotBallotWidth + ballotReplicaIdWidth)
-	ballotBallotMask     uint64 = (^(1<<ballotReplicaIdWidth - 1)) & (1<<(ballotBallotWidth+ballotReplicaIdWidth) - 1)
-	ballotReplicaIdMask  uint64 = 1<<ballotReplicaIdWidth - 1
+	ballotEpochMask      uint64 = ((1 << ballotEpochWidth) - 1) << (ballotBallotWidth + ballotReplicaIdWidth)
+	ballotBallotMask     uint64 = (^((1 << ballotReplicaIdWidth) - 1)) & ((1 << (ballotBallotWidth + ballotReplicaIdWidth)) - 1)
+	ballotReplicaIdMask  uint64 = (1 << ballotReplicaIdWidth) - 1
 )
 
 type Propose struct {
@@ -44,12 +44,6 @@ type PreAcceptReply struct {
 	deps  []InstanceIdType
 	repId int
 	insId InstanceIdType
-}
-
-// a bookkeeping for infos like maxBallot, # of nack, # of ok, etc
-type InstanceInfo struct {
-	acceptNackCnt int
-	acceptOkCnt   int
 }
 
 func (*PreAccept) getType() uint8 {

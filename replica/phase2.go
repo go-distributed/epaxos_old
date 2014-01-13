@@ -93,3 +93,7 @@ func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
 		}
 	}
 }
+
+func (r *Replica) sendCommit(cm *Commit, messageChan chan Message) {
+
+}

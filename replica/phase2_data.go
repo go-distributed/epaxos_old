@@ -20,6 +20,9 @@ type AcceptReply struct {
 	insId  InstanceIdType
 }
 
+type Commit struct {
+}
+
 func (a *Accept) getType() uint8 {
 	return acceptType
 }
