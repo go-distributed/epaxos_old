@@ -24,11 +24,14 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 		cmds:   propose.cmds,
 		deps:   deps,
 		status: preaccepted,
+		ballot: makeBallot(uint64(r.epoch), uint64(r.Id)),
+		info:   &InstanceInfo{},
 	}
 
 	// TODO: before we send the message, we need to record and sync it in disk/persistent.
 
 	// send PreAccept
+	// TODO: handle timeout
 	preAccept := &PreAccept{
 		cmds:  propose.cmds,
 		deps:  deps,

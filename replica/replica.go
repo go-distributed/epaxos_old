@@ -20,6 +20,7 @@ type Replica struct {
 	MaxInstanceNum []InstanceIdType // the highes instance number seen for each replica
 	InstanceMatrix [][]*Instance
 	StateMac       command.StateMachine
+	epoch          int
 }
 
 func startNewReplica(repId, N int) (r *Replica) {

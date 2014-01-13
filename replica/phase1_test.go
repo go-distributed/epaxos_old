@@ -88,7 +88,7 @@ func TestRecvPreAccept(t *testing.T) {
 		t.Fatal("return type should be preAcceptReply")
 	}
 
-	paReply := message.( * PreAcceptReply)
+	paReply := message.(*PreAcceptReply)
 	if paReply.deps[1] != conflictNotFound+1 {
 		t.Fatal("deps is wrong")
 	}
