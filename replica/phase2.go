@@ -9,8 +9,8 @@ func (r *Replica) sendAccept(repId int, insId InstanceIdType, messageChan chan M
 	if inst == nil {
 		// shouldn't get here
 	}
-	inst.statue = accepted
-	
+	inst.status = accepted
+
 	// TODO: persistent store the status
 	accept := &Accept{
 		cmds: inst.cmds,
@@ -41,6 +41,7 @@ func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 			status: accepted,
 			info:   &InstanceInfo{},
 		}
+		inst = r.InstanceMatrix[ac.repId][ac.insId] // for reference in below
 	} else {
 		if inst.status >= accepted || ac.ballot < inst.ballot {
 			// return nack with status
@@ -70,7 +71,6 @@ func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 		insId:  ac.insId,
 	}
 	r.sendAcceptReply(ar, messageChan)
-
 }
 
 func (r *Replica) sendAcceptReply(ar *AcceptReply, messageChan chan Message) {
@@ -86,7 +86,7 @@ func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
 	if inst.status > accepted {
 		// we've already moved on, this reply is a delayed one
 		// so just ignore it
-		return 
+		return
 	}
 
 	if !ar.ok {
@@ -98,7 +98,7 @@ func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
 		inst.info.acceptOkCnt++
 		if inst.info.acceptOkCnt >= (r.N / 2) {
 			// ok, let's try to send commit
-			sendCommit(ar.repId, ar.insId, messageChan)
+			r.sendCommit(ar.repId, ar.insId, messageChan)
 		}
 	}
 }
@@ -115,30 +115,31 @@ func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan M
 	// make commit message and send to all
 	cm := &Commit{
 		cmds: inst.cmds,
-		seq: inst.seq,
-		deps: inst.deps,
-		repId: repId,
-		insId: insId,
+		//seq: inst.seq,
+		deps:   inst.deps,
+		repId:  repId,
+		insId:  insId,
 		ballot: inst.ballot,
 	}
 	for i := 0; i < r.N; i++ {
-		go func(){
+		go func() {
 			messageChan <- cm
 		}()
 	}
 }
 
 func (r *Replica) recvCommit(cm *Commit) {
-	inst := r.InstanceMatrix[repId][insId]
+	inst := r.InstanceMatrix[cm.repId][cm.insId]
 	if inst == nil {
-		r.InstanceMatrix[ac.repId][ac.insId] == &Instance{
+		r.InstanceMatrix[cm.repId][cm.insId] = &Instance{
 			cmds: cm.cmds,
 			//seq: cm.seq,
-			deps: cm.deps,
+			deps:   cm.deps,
 			status: committed,
 			ballot: cm.ballot,
-			info: &InstanceInfo{},
+			info:   &InstanceInfo{},
 		}
+		inst = r.InstanceMatrix[cm.repId][cm.insId] // for the reference in below
 	}
 
 	if inst.status >= committed || cm.ballot < inst.ballot {

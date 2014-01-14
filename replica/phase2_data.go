@@ -18,15 +18,15 @@ type AcceptReply struct {
 	repId  int
 	insId  InstanceIdType
 	ballot uint64
-	status uint64
+	status int8
 }
 
 type Commit struct {
-	cmds []cmds.Command
-	seq int
-	deps []InstanceIdType
-	repId int
-	insId InstanceIdType
+	cmds   []cmd.Command
+	seq    int
+	deps   []InstanceIdType
+	repId  int
+	insId  InstanceIdType
 	ballot uint64
 }
 

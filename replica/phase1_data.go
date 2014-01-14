@@ -45,5 +45,3 @@ func (*PreAcceptOK) getType() uint8 {
 func (*PreAcceptReply) getType() uint8 {
 	return preAcceptReplyType
 }
-
-
