@@ -1,5 +1,6 @@
-// TODO persistent log
 package replica
+
+// TODO persistent store
 
 import (
 	"os"
@@ -138,10 +139,9 @@ func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan M
 	cm := &Commit{
 		cmds: inst.cmds,
 		//seq: inst.seq,
-		deps:   inst.deps,
-		repId:  repId,
-		insId:  insId,
-		ballot: inst.ballot,
+		deps:  inst.deps,
+		repId: repId,
+		insId: insId,
 	}
 	for i := 0; i < r.N-1; i++ {
 		go func() {
@@ -158,11 +158,11 @@ func (r *Replica) recvCommit(cm *Commit) {
 			//seq: cm.seq,
 			deps:   cm.deps,
 			status: committed,
-			ballot: cm.ballot,
-			info:   new(InstanceInfo),
+			//ballot: cm.ballot, // no meaningful ballot
+			info: new(InstanceInfo),
 		}
 	} else {
-		if inst.status >= committed || cm.ballot < inst.ballot {
+		if inst.status >= committed {
 			// ignore the message
 			log.Debug("recvCommit: ignore the Commit message")
 			return

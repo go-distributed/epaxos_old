@@ -22,12 +22,12 @@ type AcceptReply struct {
 }
 
 type Commit struct {
-	cmds   []cmd.Command
-	seq    int
-	deps   []InstanceIdType
-	repId  int
-	insId  InstanceIdType
-	ballot uint64 // TODO: there should no need for ballot
+	cmds  []cmd.Command
+	seq   int
+	deps  []InstanceIdType
+	repId int
+	insId InstanceIdType
+	//ballot uint64 // TODO: there should no need for ballot
 }
 
 func (a *Accept) getType() uint8 {
