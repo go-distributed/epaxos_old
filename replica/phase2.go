@@ -139,11 +139,10 @@ func (r *Replica) recvCommit(cm *Commit) {
 			ballot: cm.ballot,
 			info:   new(InstanceInfo),
 		}
-		inst = r.InstanceMatrix[cm.repId][cm.insId] // for the reference in below
-	}
-
-	if inst.status >= committed || cm.ballot < inst.ballot {
-		// ignore the message
-		return
+	} else {
+		if inst.status >= committed || cm.ballot < inst.ballot {
+			// ignore the message
+			return
+		}
 	}
 }
