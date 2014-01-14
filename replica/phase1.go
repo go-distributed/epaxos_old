@@ -32,10 +32,10 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 
 	// send PreAccept
 	preAccept := &PreAccept{
-		cmds:      propose.cmds,
-		deps:      deps,
-		repId:     r.Id,
-		insId:     instNo,
+		cmds:  propose.cmds,
+		deps:  deps,
+		repId: r.Id,
+		insId: instNo,
 	}
 
 	// fast quorum
@@ -44,7 +44,6 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 			messageChan <- preAccept
 		}
 	}()
-
 }
 
 func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) {

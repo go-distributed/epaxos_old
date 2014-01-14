@@ -11,6 +11,7 @@ const (
 	preAcceptReplyType
 	acceptType
 	acceptReplyType
+	commitType
 )
 
 type Propose struct {
@@ -44,5 +45,3 @@ func (*PreAcceptOK) getType() uint8 {
 func (*PreAcceptReply) getType() uint8 {
 	return preAcceptReplyType
 }
-
-
