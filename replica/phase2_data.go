@@ -27,7 +27,7 @@ type Commit struct {
 	deps   []InstanceIdType
 	repId  int
 	insId  InstanceIdType
-	ballot uint64
+	ballot uint64 // TODO: there should no need for ballot
 }
 
 func (a *Accept) getType() uint8 {
