@@ -17,11 +17,11 @@ func TestSendAccept(t *testing.T) {
 		},
 	}
 	r.recvPropose(propose, messageChan)
-	r.recvPropose(propose, messageChan)
+	r.recvPropose(propose, messageChan) // to make the second one conflict with first one
 
 	for i := 0; i < r.fastQuorumSize(); i++ {
 		<-messageChan
-		<-messageChan
+		<-messageChan // clean out the PreAccepts
 	}
 	// done setup, now send accepts
 	r.sendAccept(r.Id, 2, messageChan)
@@ -55,11 +55,11 @@ func TestRecvAcceptOk(t *testing.T) {
 	}
 	r := g[0]
 	r.recvPropose(propose, messageChan)
-	r.recvPropose(propose, messageChan)
+	r.recvPropose(propose, messageChan) // to make the second one conflict with first one
 
 	for i := 0; i < r.fastQuorumSize(); i++ {
 		<-messageChan
-		<-messageChan
+		<-messageChan // clean out the PreAccepts
 	}
 
 	// done setup, now send accepts
@@ -97,11 +97,11 @@ func TestRecvAcceptNackBallot(t *testing.T) {
 	}
 	r := g[0]
 	r.recvPropose(propose, messageChan)
-	r.recvPropose(propose, messageChan)
+	r.recvPropose(propose, messageChan) // to make the second one conflict with first one
 
 	for i := 0; i < r.fastQuorumSize(); i++ {
 		<-messageChan
-		<-messageChan
+		<-messageChan // clean out the PreAccepts
 	}
 	// done setup, let's  send accepts
 	r.sendAccept(r.Id, 2, messageChan)
@@ -142,11 +142,11 @@ func TestRecvAcceptNackStatus(t *testing.T) {
 	}
 	r := g[0]
 	r.recvPropose(propose, messageChan)
-	r.recvPropose(propose, messageChan)
+	r.recvPropose(propose, messageChan) // to make the second one conflict with first one
 
 	for i := 0; i < r.fastQuorumSize(); i++ {
 		<-messageChan
-		<-messageChan
+		<-messageChan // clean out the PreAccepts
 	}
 	// done setup, let send accepts
 	r.sendAccept(r.Id, 2, messageChan)
@@ -192,11 +192,11 @@ func TestSendCommit(t *testing.T) {
 	}
 	r := g[0]
 	r.recvPropose(propose, messageChan)
-	r.recvPropose(propose, messageChan)
+	r.recvPropose(propose, messageChan) // to make the second one conflict with first one
 
 	for i := 0; i < r.fastQuorumSize(); i++ {
 		<-messageChan
-		<-messageChan
+		<-messageChan // clean out the PreAccepts
 	}
 	// done setup, let's send commits
 	r.sendCommit(r.Id, 2, messageChan)
@@ -237,11 +237,11 @@ func TestRecvCommitOk(t *testing.T) {
 	}
 	r := g[0]
 	r.recvPropose(propose, messageChan)
-	r.recvPropose(propose, messageChan)
+	r.recvPropose(propose, messageChan) // to make the second one conflict with first one
 
 	for i := 0; i < r.fastQuorumSize(); i++ {
 		<-messageChan
-		<-messageChan
+		<-messageChan // clean out the PreAccepts
 	}
 	// done setup, let's send commits
 	r.sendCommit(r.Id, 2, messageChan)
@@ -290,11 +290,11 @@ func TestRecvCommitIgnore(t *testing.T) {
 	}
 	r := g[0]
 	r.recvPropose(propose, messageChan)
-	r.recvPropose(propose, messageChan)
+	r.recvPropose(propose, messageChan) // to make the second one conflict with first one
 
 	for i := 0; i < r.fastQuorumSize(); i++ {
 		<-messageChan
-		<-messageChan
+		<-messageChan // clean out the PreAccepts
 	}
 	// done setup, let's send commits
 	r.sendCommit(r.Id, 2, messageChan)

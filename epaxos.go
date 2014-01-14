@@ -2,7 +2,6 @@ package epaxos
 
 import (
 	"fmt"
-
 )
 
 var _ = fmt.Printf
