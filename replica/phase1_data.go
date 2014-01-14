@@ -32,7 +32,6 @@ type PreAcceptReply struct {
 	deps  []InstanceIdType
 	repId int
 	insId InstanceIdType
-	ack   int
 }
 
 func (*PreAccept) getType() uint8 {
@@ -44,5 +43,3 @@ func (*PreAcceptOK) getType() uint8 {
 func (*PreAcceptReply) getType() uint8 {
 	return preAcceptReplyType
 }
-
-

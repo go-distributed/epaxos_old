@@ -26,8 +26,8 @@ const (
 
 // a bookkeeping for infos like maxBallot, # of nack, # of ok, etc
 type InstanceInfo struct {
-	preaccCnt     int
-	preaccOkCnt   int
+	preaccCnt int
+	haveDiff bool
 
 	acceptNackCnt int
 	acceptOkCnt   int

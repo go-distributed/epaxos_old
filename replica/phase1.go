@@ -32,10 +32,10 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 
 	// send PreAccept
 	preAccept := &PreAccept{
-		cmds:      propose.cmds,
-		deps:      deps,
-		repId:     r.Id,
-		insId:     instNo,
+		cmds:  propose.cmds,
+		deps:  deps,
+		repId: r.Id,
+		insId: instNo,
 	}
 
 	// fast quorum
@@ -48,6 +48,7 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 }
 
 func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) {
+	// TODO: we need to check ballot for that coming from prepare phase
 	// update
 	deps, changed := r.update(preAccept.cmds, preAccept.deps, preAccept.repId)
 	// set cmd
@@ -55,6 +56,7 @@ func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) 
 		cmds:   preAccept.cmds,
 		deps:   deps,
 		status: preaccepted,
+		info:   &InstanceInfo{},
 	}
 	if preAccept.insId >= r.MaxInstanceNum[preAccept.repId] {
 		r.MaxInstanceNum[preAccept.repId] = preAccept.insId + 1
@@ -78,15 +80,38 @@ func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) 
 }
 
 func (r *Replica) recvPreAcceptOK(paOK *PreAcceptOK) {
-	inst := r.InstanceMatrix[r.Id][paOK.insId]
-	inst.info.preaccOkCnt++
-	inst.info.preaccCnt++
+	// It's almost the same as recvpreacceptreply() function. But it doesn't need to
+	// union the dependencies.
+	// We need some refactoring between these two functions.
 }
 
 func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
-	inst := r.InstanceMatrix[r.Id][paReply.insId]
+	inst := r.InstanceMatrix[paReply.repId][paReply.insId]
+
+	if inst == nil {
+		// TODO: should not happen
+		return
+	}
+
+	if inst.status != preaccepted {
+		// TODO: slow reply
+		return
+	}
+
 	inst.info.preaccCnt++
 
+	deps, same := r.union(inst.deps, paReply.deps)
+	if !same {
+		inst.info.haveDiff = true
+		inst.deps = deps
+	}
+
+	if inst.info.preaccCnt >= r.N/2 && inst.info.haveDiff {
+		// slow path
+
+	} else if inst.info.preaccCnt == r.fastQuorumSize() && !inst.info.haveDiff {
+		// fast path
+	}
 }
 
 func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType,
@@ -118,4 +143,17 @@ func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType,
 	}
 
 	return deps, changed
+}
+
+func (r *Replica) union(deps1, deps2 []InstanceIdType) ([]InstanceIdType, bool) {
+	same := true
+	for rep := 0; rep < r.N; rep++ {
+		if deps1[rep] != deps2[rep] {
+			same = false
+			if deps1[rep] < deps2[rep] {
+				deps1[rep] = deps2[rep]
+			}
+		}
+	}
+	return deps1, same
 }
