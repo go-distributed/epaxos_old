@@ -6,6 +6,12 @@ package replica
 // TODO: return error
 func (r *Replica) sendAccept(repId int, insId InstanceIdType, messageChan chan Message) {
 	inst := r.InstanceMatrix[repId][insId]
+	if inst == nil {
+		// shouldn't get here
+	}
+	inst.status = accepted
+
+	// TODO: persistent store the status
 	accept := &Accept{
 		cmds: inst.cmds,
 		//seq:   inst.seq,
@@ -31,18 +37,20 @@ func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 			cmds: ac.cmds,
 			//seq: inst.seq,
 			deps:   ac.deps,
-			status: accepted,
 			ballot: ac.ballot,
-			info:   &InstanceInfo{},
+			status: accepted,
+			info:   new(InstanceInfo),
 		}
+		inst = r.InstanceMatrix[ac.repId][ac.insId] // for reference in below
 	} else {
-		if ac.ballot < inst.ballot {
-			// return nack
+		if inst.status >= accepted || ac.ballot < inst.ballot {
+			// return nack with status
 			ar := &AcceptReply{
 				ok:     false,
-				ballot: inst.ballot,
 				repId:  ac.repId,
 				insId:  ac.insId,
+				ballot: inst.ballot,
+				status: inst.status,
 			}
 			r.sendAcceptReply(ar, messageChan)
 			return
@@ -63,7 +71,6 @@ func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 		insId:  ac.insId,
 	}
 	r.sendAcceptReply(ar, messageChan)
-
 }
 
 func (r *Replica) sendAcceptReply(ar *AcceptReply, messageChan chan Message) {
@@ -76,24 +83,66 @@ func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
 		// TODO: should not get here
 	}
 
+	if inst.status > accepted {
+		// we've already moved on, this reply is a delayed one
+		// so just ignore it
+		return
+	}
+
 	if !ar.ok {
-		// TODO: what if receive new epoch?
-		b := (ar.ballot & ballotBallotMask) | (inst.ballot & (^ballotBallotMask))
-		inst.ballot = makeLargerBallot(b)
-		// re-send prepare
+		// there must be another proposer, so let's keep quiet
+		return
 	}
 
 	if ar.ok {
 		inst.info.acceptOkCnt++
 		if inst.info.acceptOkCnt >= (r.N / 2) {
 			// ok, let's try to send commit
-			inst.status = committed
-			// TODO persistent store
-			// send commit
+			r.sendCommit(ar.repId, ar.insId, messageChan)
 		}
 	}
 }
 
-func (r *Replica) sendCommit(cm *Commit, messageChan chan Message) {
+func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan Message) {
+	inst := r.InstanceMatrix[repId][insId]
+	if inst == nil {
+		// shouldn't get here
+	}
 
+	inst.status = committed
+	// TODO: persistent store
+
+	// make commit message and send to all
+	cm := &Commit{
+		cmds: inst.cmds,
+		//seq: inst.seq,
+		deps:   inst.deps,
+		repId:  repId,
+		insId:  insId,
+		ballot: inst.ballot,
+	}
+	for i := 0; i < r.N; i++ {
+		go func() {
+			messageChan <- cm
+		}()
+	}
+}
+
+func (r *Replica) recvCommit(cm *Commit) {
+	inst := r.InstanceMatrix[cm.repId][cm.insId]
+	if inst == nil {
+		r.InstanceMatrix[cm.repId][cm.insId] = &Instance{
+			cmds: cm.cmds,
+			//seq: cm.seq,
+			deps:   cm.deps,
+			status: committed,
+			ballot: cm.ballot,
+			info:   new(InstanceInfo),
+		}
+	} else {
+		if inst.status >= committed || cm.ballot < inst.ballot {
+			// ignore the message
+			return
+		}
+	}
 }

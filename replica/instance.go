@@ -5,8 +5,7 @@ import (
 )
 
 const (
-	none int8 = iota
-	preaccepted
+	preaccepted int8 = iota
 	accepted
 	committed
 	executed
@@ -27,7 +26,7 @@ const (
 // a bookkeeping for infos like maxBallot, # of nack, # of ok, etc
 type InstanceInfo struct {
 	preaccCnt int
-	haveDiff bool
+	haveDiff  bool
 
 	acceptNackCnt int
 	acceptOkCnt   int
@@ -54,4 +53,8 @@ func getEpoch(b uint64) uint64 {
 
 func makeBallot(epoch, replicaId uint64) uint64 {
 	return (epoch << (64 - ballotEpochWidth - ballotBallotWidth)) | replicaId
+}
+
+func isInitialBallot(b uint64) bool {
+	return (b & ballotBallotMask) == 0
 }

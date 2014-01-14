@@ -25,7 +25,7 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 		deps:   deps,
 		status: preaccepted,
 		ballot: makeBallot(uint64(r.epoch), uint64(r.Id)),
-		info:   &InstanceInfo{},
+		info:   new(InstanceInfo),
 	}
 
 	// TODO: before we send the message, we need to record and sync it in disk/persistent.
@@ -93,6 +93,11 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 		return
 	}
 
+        // when we receive a reply which is not what we expect (sometimes the status
+        // is later than we thought), it's probably because the instance has been delayed/partitioned
+        // for a period of time. And after it comes back, things have changed. It's been accepted, or
+        // committed, or even executed. Since it's done by majority, we just ignore it here and hope
+        // the instance would be fixed later (by asking dependencies).
 	if inst.status != preaccepted {
 		// TODO: slow reply
 		return
@@ -100,11 +105,13 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 
 	inst.info.preaccCnt++
 
+        // only diff with recvpreacceptok() {
 	deps, same := r.union(inst.deps, paReply.deps)
 	if !same {
 		inst.info.haveDiff = true
 		inst.deps = deps
 	}
+	// }
 
 	if inst.info.preaccCnt >= r.N/2 && inst.info.haveDiff {
 		// slow path

@@ -11,6 +11,7 @@ const (
 	preAcceptReplyType
 	acceptType
 	acceptReplyType
+	commitType
 )
 
 type Propose struct {
