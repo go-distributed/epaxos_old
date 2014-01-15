@@ -46,6 +46,11 @@ func (r *Replica) sendAccept(repId int, insId InstanceIdType, messageChan chan M
 }
 
 func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
+	// TODO: remember to discuss on MaxInstanceNum
+	if r.MaxInstanceNum[ac.repId] <= ac.insId {
+		r.MaxInstanceNum[ac.repId] = ac.insId + 1
+	}
+
 	inst := r.InstanceMatrix[ac.repId][ac.insId]
 
 	if inst == nil {
@@ -151,6 +156,11 @@ func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan M
 }
 
 func (r *Replica) recvCommit(cm *Commit) {
+	// TODO: remember to discuss on MaxInstanceNum
+	if r.MaxInstanceNum[ac.repId] <= ac.insId {
+		r.MaxInstanceNum[ac.repId] = ac.insId + 1
+	}
+
 	inst := r.InstanceMatrix[cm.repId][cm.insId]
 	if inst == nil {
 		r.InstanceMatrix[cm.repId][cm.insId] = &Instance{
