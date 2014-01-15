@@ -56,7 +56,7 @@ func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) 
 		cmds:   preAccept.cmds,
 		deps:   deps,
 		status: preaccepted,
-		info:   &InstanceInfo{},
+		info:   new(InstanceInfo),
 	}
 	if preAccept.insId >= r.MaxInstanceNum[preAccept.repId] {
 		r.MaxInstanceNum[preAccept.repId] = preAccept.insId + 1
@@ -80,8 +80,8 @@ func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) 
 }
 
 func (r *Replica) recvPreAcceptOK(paOK *PreAcceptOK) {
-	// It's almost the same as recvpreacceptreply() function. But it doesn't need to
-	// union the dependencies.
+	// recvpreacceptok() is subset of recvpreacceptreply()
+	// It doens't need to do union
 	// We need some refactoring between these two functions.
 }
 
@@ -93,30 +93,32 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 		return
 	}
 
-        // when we receive a reply which is not what we expect (sometimes the status
-        // is later than we thought), it's probably because the instance has been delayed/partitioned
-        // for a period of time. And after it comes back, things have changed. It's been accepted, or
-        // committed, or even executed. Since it's done by majority, we just ignore it here and hope
-        // the instance would be fixed later (by asking dependencies).
-	if inst.status != preaccepted {
+	// when we receive a reply which is not what we expect (sometimes the status
+	// is later than we thought), it's probably because the instance has been delayed/partitioned
+	// for a period of time. And after it comes back, things have changed. It's been accepted, or
+	// committed, or even executed. Since it's accepted by majority already, we ignore it here and hope
+	// the instance would be fixed later (by asking dependencies when executing commands).
+	if inst.status > preaccepted {
 		// TODO: slow reply
 		return
 	}
 
 	inst.info.preaccCnt++
 
-        // only diff with recvpreacceptok() {
+	// recvpreacceptok doesn't need this {
 	deps, same := r.union(inst.deps, paReply.deps)
 	if !same {
-		inst.info.haveDiff = true
+		if inst.info.preaccCnt > 1 {
+			inst.info.haveDiffReply = true
+		}
 		inst.deps = deps
 	}
 	// }
 
-	if inst.info.preaccCnt >= r.N/2 && inst.info.haveDiff {
+	if inst.info.preaccCnt >= r.N/2 && !inst.allReplyTheSame() {
 		// slow path
 
-	} else if inst.info.preaccCnt == r.fastQuorumSize() && !inst.info.haveDiff {
+	} else if inst.info.preaccCnt == r.fastQuorumSize() && inst.allReplyTheSame() {
 		// fast path
 	}
 }
@@ -126,9 +128,14 @@ func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType,
 	changed := false
 
 	for rep := 0; rep < r.N; rep++ {
+
+		// We don't need to update deps herebecause
+		// - it's from remote instance and
+		// - we know that it knows latest dependency for itself.
 		if r.Id != repId && rep == repId {
 			continue
 		}
+
 		repInst := r.InstanceMatrix[rep]
 		InstId := r.MaxInstanceNum[rep] - 1
 
@@ -143,8 +150,8 @@ func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType,
 			}
 		}
 		// if InstId > original dep, we found newer conflicted instance;
-		// if InstId = original dep, we didn't find any new conflict;
-		if InstId != deps[rep] {
+		// if InstId <= original dep, we didn't find any new conflict;
+		if InstId > deps[rep] {
 			deps[rep] = InstId
 		}
 	}

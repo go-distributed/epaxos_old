@@ -19,10 +19,10 @@ type Propose struct {
 }
 
 type PreAccept struct {
-	cmds  []cmd.Command
-	deps  []InstanceIdType
-	repId int
-	insId InstanceIdType
+	cmds   []cmd.Command
+	deps   []InstanceIdType
+	repId  int
+	insId  InstanceIdType
 }
 
 type PreAcceptOK struct {

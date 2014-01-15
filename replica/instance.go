@@ -25,8 +25,8 @@ const (
 
 // a bookkeeping for infos like maxBallot, # of nack, # of ok, etc
 type InstanceInfo struct {
-	preaccCnt int
-	haveDiff  bool
+	preaccCnt     int
+	haveDiffReply bool
 
 	acceptNackCnt int
 	acceptOkCnt   int
@@ -38,6 +38,10 @@ type Instance struct {
 	status int8
 	ballot uint64
 	info   *InstanceInfo
+}
+
+func (Inst *Instance) allReplyTheSame() bool {
+	return Inst.info.haveDiffReply == false
 }
 
 func makeLargerBallot(b uint64) uint64 {

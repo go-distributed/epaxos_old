@@ -130,5 +130,4 @@ func TestUnion(t *testing.T) {
 	if same || deps1[0] != 2 {
 		t.Fatal("wrong deps after union")
 	}
-
 }
