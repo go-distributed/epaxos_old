@@ -93,4 +93,41 @@ func TestRecvPreAccept(t *testing.T) {
 		t.Fatal("deps is wrong")
 	}
 
+	preAccept3 := &PreAccept{
+		cmds:  []cmd.Command{cmd.Command("world")},
+		deps:  make([]InstanceIdType, 5),
+		repId: 2,
+		insId: conflictNotFound + 2,
+	}
+
+	r.recvPreAccept(preAccept3, messageChan)
+
+	message = <-messageChan
+	if message.getType() != preAcceptOKType {
+		t.Fatal("return type should be preAcceptOK")
+	}
+
+}
+
+func TestUnion(t *testing.T) {
+	r := startNewReplica(0, 3)
+	deps1 := []InstanceIdType{0, 0, 0}
+	deps2 := []InstanceIdType{0, 0, 0}
+
+	_, same := r.union(deps1, deps2)
+	if !same {
+		t.Fatal("two deps should be the same")
+	}
+
+	deps1[0] = 1
+	deps1, same = r.union(deps1, deps2)
+	if same || deps1[0] != 1 {
+		t.Fatal("wrong deps after union")
+	}
+
+	deps2[0] = 2
+	deps1, same = r.union(deps1, deps2)
+	if same || deps1[0] != 2 {
+		t.Fatal("wrong deps after union")
+	}
 }
