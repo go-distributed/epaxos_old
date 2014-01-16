@@ -18,6 +18,8 @@ type InstanceInfo struct {
 
 	acceptNackCnt int
 	acceptOkCnt   int
+
+	prepareCnt int
 }
 
 type Instance struct {

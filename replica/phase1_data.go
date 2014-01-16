@@ -12,6 +12,8 @@ const (
 	acceptType
 	acceptReplyType
 	commitType
+	prepareType
+	prepareReplyType
 )
 
 type Propose struct {
@@ -19,10 +21,11 @@ type Propose struct {
 }
 
 type PreAccept struct {
-	cmds  []cmd.Command
-	deps  []InstanceIdType
-	repId int
-	insId InstanceIdType
+	cmds   []cmd.Command
+	deps   []InstanceIdType
+	repId  int
+	insId  InstanceIdType
+	ballot uint64
 }
 
 type PreAcceptOK struct {
@@ -33,6 +36,7 @@ type PreAcceptReply struct {
 	deps  []InstanceIdType
 	repId int
 	insId InstanceIdType
+	ok    bool
 }
 
 func (*PreAccept) getType() uint8 {
