@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	cmd "github.com/go-epaxos/epaxos/command"
-	//"github.com/go-epaxos/epaxos/logger"
 )
 
 // Test if the Accept messages can be sent correctly
@@ -293,7 +292,6 @@ func testNoMessageLeft(messageChan chan Message, t *testing.T) {
 }
 
 func setup(g []*Replica) (*Replica, chan Message, *Propose) {
-	//log = logger.ScreenErrLogger
 	messageChan := make(chan Message, 100)
 	propose := &Propose{
 		cmds: []cmd.Command{
