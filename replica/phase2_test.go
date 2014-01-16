@@ -8,8 +8,8 @@ import (
 
 // Test if the Accept messages can be sent correctly
 func TestSendAccept(t *testing.T) {
-	g := makeReplicaGroup(5)
-	r, messageChan, propose := setup(g)
+	g := phase2TestMakeRepGroup(5)
+	r, messageChan, propose := phase2TestSetup(g)
 
 	// done setup, now send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
@@ -32,8 +32,8 @@ func TestSendAccept(t *testing.T) {
 
 // Test if we can accpet the Accept messages correctly
 func TestRecvAcceptOk(t *testing.T) {
-	g := makeReplicaGroup(5)
-	r, messageChan, _ := setup(g)
+	g := phase2TestMakeRepGroup(5)
+	r, messageChan, _ := phase2TestSetup(g)
 
 	// done setup, now send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
@@ -49,13 +49,13 @@ func TestRecvAcceptOk(t *testing.T) {
 			t.Fatal("should be ok")
 		}
 	}
-	testNoMessageLeft(messageChan, t)
+	phase2TestNoMessageLeft(messageChan, t)
 }
 
 // Test if we reject the Accepts correctly
 func TestRecvAcceptNackBallot(t *testing.T) {
-	g := makeReplicaGroup(5)
-	r, messageChan, _ := setup(g)
+	g := phase2TestMakeRepGroup(5)
+	r, messageChan, _ := phase2TestSetup(g)
 
 	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
@@ -74,13 +74,13 @@ func TestRecvAcceptNackBallot(t *testing.T) {
 			t.Fatal("should not be ok")
 		}
 	}
-	testNoMessageLeft(messageChan, t)
+	phase2TestNoMessageLeft(messageChan, t)
 }
 
 // Test if we reject the Accepts correctly
 func TestRecvAcceptNackStatus(t *testing.T) {
-	g := makeReplicaGroup(5)
-	r, messageChan, _ := setup(g)
+	g := phase2TestMakeRepGroup(5)
+	r, messageChan, _ := phase2TestSetup(g)
 
 	// done setup, let send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
@@ -104,13 +104,13 @@ func TestRecvAcceptNackStatus(t *testing.T) {
 			t.Fatal("should not be ok")
 		}
 	}
-	testNoMessageLeft(messageChan, t)
+	phase2TestNoMessageLeft(messageChan, t)
 }
 
 // Test if the Commit messages are sent successfully
 func TestSendCommit(t *testing.T) {
-	g := makeReplicaGroup(5)
-	r, messageChan, propose := setup(g)
+	g := phase2TestMakeRepGroup(5)
+	r, messageChan, propose := phase2TestSetup(g)
 
 	// done setup, let's send Commits
 	r.sendCommit(r.Id, 2, messageChan)
@@ -129,13 +129,13 @@ func TestSendCommit(t *testing.T) {
 			t.Fatal("deps[0] should be 1")
 		}
 	}
-	testNoMessageLeft(messageChan, t)
+	phase2TestNoMessageLeft(messageChan, t)
 }
 
 // Receive the Commit messages and accept them
 func TestRecvCommitOk(t *testing.T) {
-	g := makeReplicaGroup(5)
-	r, messageChan, propose := setup(g)
+	g := phase2TestMakeRepGroup(5)
+	r, messageChan, propose := phase2TestSetup(g)
 
 	// done setup, let's send Commits
 	r.sendCommit(r.Id, 2, messageChan)
@@ -159,13 +159,13 @@ func TestRecvCommitOk(t *testing.T) {
 			t.Fatal("status is not committed")
 		}
 	}
-	testNoMessageLeft(messageChan, t)
+	phase2TestNoMessageLeft(messageChan, t)
 }
 
 // Receive the Commits, but ignore them
 func TestRecvCommitIgnore(t *testing.T) {
-	g := makeReplicaGroup(10)
-	r, messageChan, propose := setup(g)
+	g := phase2TestMakeRepGroup(10)
+	r, messageChan, propose := phase2TestSetup(g)
 
 	// done setup, let's send Commits
 	r.sendCommit(r.Id, 2, messageChan)
@@ -217,13 +217,13 @@ func TestRecvCommitIgnore(t *testing.T) {
 			t.Fatal("status is not committed")
 		}
 	}
-	testNoMessageLeft(messageChan, t)
+	phase2TestNoMessageLeft(messageChan, t)
 }
 
 // Test send Accept and then Commit messages
 func TestAcceptAndCommit(t *testing.T) {
-	g := makeReplicaGroup(5)
-	r, messageChan, _ := setup(g)
+	g := phase2TestMakeRepGroup(5)
+	r, messageChan, _ := phase2TestSetup(g)
 
 	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
@@ -243,13 +243,13 @@ func TestAcceptAndCommit(t *testing.T) {
 		m := (<-messageChan).(*Commit)
 		g[i].recvCommit(m)
 	}
-	testNoMessageLeft(messageChan, t)
+	phase2TestNoMessageLeft(messageChan, t)
 }
 
 // Test send Accept but no Commit messages
 func TestAcceptAndAbortCommit(t *testing.T) {
-	g := makeReplicaGroup(5)
-	r, messageChan, _ := setup(g)
+	g := phase2TestMakeRepGroup(5)
+	r, messageChan, _ := phase2TestSetup(g)
 
 	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
@@ -269,11 +269,11 @@ func TestAcceptAndAbortCommit(t *testing.T) {
 	}
 
 	// now r should not send out any Commits
-	testNoMessageLeft(messageChan, t)
+	phase2TestNoMessageLeft(messageChan, t)
 }
 
 // helpers
-func makeReplicaGroup(size int) []*Replica {
+func phase2TestMakeRepGroup(size int) []*Replica {
 	g := make([]*Replica, size)
 	for i := range g {
 		g[i] = startNewReplica(i, size)
@@ -282,7 +282,7 @@ func makeReplicaGroup(size int) []*Replica {
 	return g
 }
 
-func testNoMessageLeft(messageChan chan Message, t *testing.T) {
+func phase2TestNoMessageLeft(messageChan chan Message, t *testing.T) {
 	select {
 	case <-messageChan:
 		t.Fatal("should be no messages left")
@@ -291,7 +291,7 @@ func testNoMessageLeft(messageChan chan Message, t *testing.T) {
 	}
 }
 
-func setup(g []*Replica) (*Replica, chan Message, *Propose) {
+func phase2TestSetup(g []*Replica) (*Replica, chan Message, *Propose) {
 	messageChan := make(chan Message, 100)
 	propose := &Propose{
 		cmds: []cmd.Command{
