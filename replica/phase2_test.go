@@ -8,7 +8,7 @@ import (
 
 // Test if the Accept messages can be sent correctly
 func TestSendAccept(t *testing.T) {
-	g := phase2MakeReplicaGroup(5)
+	g := phase2TestMakeRepGroup(5)
 	r, messageChan, propose := phase2TestSetup(g)
 
 	// done setup, now send Accepts
@@ -32,7 +32,7 @@ func TestSendAccept(t *testing.T) {
 
 // Test if we can accpet the Accept messages correctly
 func TestRecvAcceptOk(t *testing.T) {
-	g := phase2MakeReplicaGroup(5)
+	g := phase2TestMakeRepGroup(5)
 	r, messageChan, _ := phase2TestSetup(g)
 
 	// done setup, now send Accepts
@@ -54,7 +54,7 @@ func TestRecvAcceptOk(t *testing.T) {
 
 // Test if we reject the Accepts correctly
 func TestRecvAcceptNackBallot(t *testing.T) {
-	g := phase2MakeReplicaGroup(5)
+	g := phase2TestMakeRepGroup(5)
 	r, messageChan, _ := phase2TestSetup(g)
 
 	// done setup, let's send Accepts
@@ -79,7 +79,7 @@ func TestRecvAcceptNackBallot(t *testing.T) {
 
 // Test if we reject the Accepts correctly
 func TestRecvAcceptNackStatus(t *testing.T) {
-	g := phase2MakeReplicaGroup(5)
+	g := phase2TestMakeRepGroup(5)
 	r, messageChan, _ := phase2TestSetup(g)
 
 	// done setup, let send Accepts
@@ -109,7 +109,7 @@ func TestRecvAcceptNackStatus(t *testing.T) {
 
 // Test if the Commit messages are sent successfully
 func TestSendCommit(t *testing.T) {
-	g := phase2MakeReplicaGroup(5)
+	g := phase2TestMakeRepGroup(5)
 	r, messageChan, propose := phase2TestSetup(g)
 
 	// done setup, let's send Commits
@@ -134,7 +134,7 @@ func TestSendCommit(t *testing.T) {
 
 // Receive the Commit messages and accept them
 func TestRecvCommitOk(t *testing.T) {
-	g := phase2MakeReplicaGroup(5)
+	g := phase2TestMakeRepGroup(5)
 	r, messageChan, propose := phase2TestSetup(g)
 
 	// done setup, let's send Commits
@@ -164,7 +164,7 @@ func TestRecvCommitOk(t *testing.T) {
 
 // Receive the Commits, but ignore them
 func TestRecvCommitIgnore(t *testing.T) {
-	g := phase2MakeReplicaGroup(10)
+	g := phase2TestMakeRepGroup(10)
 	r, messageChan, propose := phase2TestSetup(g)
 
 	// done setup, let's send Commits
@@ -222,7 +222,7 @@ func TestRecvCommitIgnore(t *testing.T) {
 
 // Test send Accept and then Commit messages
 func TestAcceptAndCommit(t *testing.T) {
-	g := phase2MakeReplicaGroup(5)
+	g := phase2TestMakeRepGroup(5)
 	r, messageChan, _ := phase2TestSetup(g)
 
 	// done setup, let's send Accepts
@@ -248,7 +248,7 @@ func TestAcceptAndCommit(t *testing.T) {
 
 // Test send Accept but no Commit messages
 func TestAcceptAndAbortCommit(t *testing.T) {
-	g := phase2MakeReplicaGroup(5)
+	g := phase2TestMakeRepGroup(5)
 	r, messageChan, _ := phase2TestSetup(g)
 
 	// done setup, let's send Accepts
@@ -273,7 +273,7 @@ func TestAcceptAndAbortCommit(t *testing.T) {
 }
 
 // helpers
-func phase2MakeReplicaGroup(size int) []*Replica {
+func phase2TestMakeRepGroup(size int) []*Replica {
 	g := make([]*Replica, size)
 	for i := range g {
 		g[i] = startNewReplica(i, size)
