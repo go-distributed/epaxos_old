@@ -16,7 +16,7 @@ const (
 
 func makeLargerBallot(b uint64) uint64 {
 	return (b & ballotEpochMask) |
-		((b & ballotNumberMask) + ballotNumberUnit) |
+		(((b & ballotNumberMask) + ballotNumberUnit) & ballotNumberMask) |
 		(b & ballotReplicaIdMask)
 }
 
