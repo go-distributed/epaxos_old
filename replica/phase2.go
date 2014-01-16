@@ -3,27 +3,29 @@ package replica
 // TODO persistent store
 
 import (
-	"os"
+	"fmt"
+	//"os"
 
-	golog "github.com/coreos/go-log/log"
+	//golog "github.com/coreos/go-log/log"
 )
 
 // instId is an id of the already updated instance
 // messageChan is a toy channel for emulating broadcast
 // TODO: return error
 
-var log = golog.NewSimple(
-	golog.PriorityFilter(
-		golog.PriErr,
-		golog.WriterSink(os.Stdout, golog.BasicFormat, golog.BasicFields),
-	),
-)
+// logger variable
+//var log = golog.NewSimple(
+//	golog.PriorityFilter(
+//		golog.PriErr,
+//		golog.WriterSink(os.Stdout, golog.BasicFormat, golog.BasicFields),
+//	),
+//)
 
 func (r *Replica) sendAccept(repId int, insId InstanceIdType, messageChan chan Message) {
 	inst := r.InstanceMatrix[repId][insId]
 	if inst == nil {
 		// shouldn't get here
-		log.Error("shouldn't get here, repId = ", repId, " insId = ", insId)
+		fmt.Errorf("shouldn't get here, repId = %d, insId = %d\n", repId, insId)
 	}
 	inst.status = accepted
 
@@ -73,7 +75,7 @@ func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 				ballot: inst.ballot,
 				status: inst.status,
 			}
-			log.Debug("recvAccept: return nack")
+			// fmt.Println("recvAccept: return nack") // debug message
 			r.sendAcceptReply(ar, messageChan)
 			return
 		} else {
@@ -92,7 +94,7 @@ func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 		repId:  ac.repId,
 		insId:  ac.insId,
 	}
-	log.Debug("recvAccept: return ok")
+	// fmt.Println("recvAccept: return ok") // debug message
 	r.sendAcceptReply(ar, messageChan)
 }
 
@@ -104,19 +106,19 @@ func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
 	inst := r.InstanceMatrix[ar.repId][ar.insId]
 	if inst == nil {
 		// TODO: should not get here
-		log.Error("shouldn't get here, repId = ", ar.repId, " insId = ", ar.insId)
+		fmt.Errorf("shouldn't get here, repId = %d, insId = %d", ar.repId, ar.insId)
 	}
 
 	if inst.status > accepted {
 		// we've already moved on, this reply is a delayed one
 		// so just ignore it
-		log.Warning("recvAcceptReply: receive an AcceptReply from an out-dated replica, means there must be a partition or recover")
+		// fmt.Prinln("recvAcceptReply: receive an AcceptReply from an out-dated replica, means there must be a partition or recover") // TODO: warning message
 		return
 	}
 
 	if !ar.ok {
 		// there must be another proposer, so let's keep quiet
-		log.Debug("recvAcceptReply: receive an AcceptReply with ok = false")
+		// fmt.Println("recvAcceptReply: receive an AcceptReply with ok = false") // TODO: debug message
 		return
 	}
 
@@ -124,7 +126,7 @@ func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
 		inst.info.acceptOkCnt++
 		if inst.info.acceptOkCnt >= (r.N / 2) {
 			// ok, let's try to send commit
-			log.Debug("recvAcceptReply: enough replies, now try commit")
+			// fmt.Println("recvAcceptReply: enough replies, now try commit") // TODO: debug message
 			r.sendCommit(ar.repId, ar.insId, messageChan)
 		}
 	}
@@ -134,7 +136,7 @@ func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan M
 	inst := r.InstanceMatrix[repId][insId]
 	if inst == nil {
 		// shouldn't get here
-		log.Error("shouldn't get here, repId = ", repId, " insId = ", insId)
+		fmt.Errorf("shouldn't get here, repId = %d, insId = %d", repId, insId)
 	}
 
 	inst.status = committed
@@ -174,8 +176,13 @@ func (r *Replica) recvCommit(cm *Commit) {
 	} else {
 		if inst.status >= committed {
 			// ignore the message
-			log.Debug("recvCommit: ignore the Commit message")
+			// fmt.Println("recvCommit: ignore the Commit message") // TODO: debug message
 			return
 		}
+
+		inst.cmds = cm.cmds
+		//inst.seq = cm.seq
+		inst.deps = cm.deps
+		inst.status = committed
 	}
 }
