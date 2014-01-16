@@ -3,7 +3,7 @@ package replica
 // TODO persistent store
 
 import (
-	"fmt"
+	"strconv"
 )
 
 // instId is an id of the already updated instance
@@ -13,7 +13,7 @@ func (r *Replica) sendAccept(repId int, insId InstanceIdType, messageChan chan M
 	inst := r.InstanceMatrix[repId][insId]
 	if inst == nil {
 		// shouldn't get here
-		fmt.Errorf("shouldn't get here, repId = %d, insId = %d\n", repId, insId)
+		panic("shouldn't get here, repId = " + strconv.Itoa(repId) + " insId = " + strconv.Itoa(int(insId)))
 	}
 	inst.status = accepted
 
@@ -89,7 +89,7 @@ func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
 	inst := r.InstanceMatrix[ar.repId][ar.insId]
 	if inst == nil {
 		// TODO: should not get here
-		fmt.Errorf("shouldn't get here, repId = %d, insId = %d", ar.repId, ar.insId)
+		panic("shouldn't get here, repId = " + strconv.Itoa(ar.repId) + " insId = " + strconv.Itoa(int(ar.insId)))
 	}
 
 	if inst.status > accepted {
@@ -115,7 +115,7 @@ func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan M
 	inst := r.InstanceMatrix[repId][insId]
 	if inst == nil {
 		// shouldn't get here
-		fmt.Errorf("shouldn't get here, repId = %d, insId = %d", repId, insId)
+		panic("shouldn't get here, repId = " + strconv.Itoa(repId) + " insId = " + strconv.Itoa(int(insId)))
 	}
 
 	inst.status = committed
