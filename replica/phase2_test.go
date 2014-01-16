@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	cmd "github.com/go-epaxos/epaxos/command"
-	//"github.com/go-epaxos/epaxos/logger"
 )
 
 // Test if the Accept messages can be sent correctly
@@ -12,10 +11,10 @@ func TestSendAccept(t *testing.T) {
 	g := makeReplicaGroup(5)
 	r, messageChan, propose := setup(g)
 
-	// done setup, now send accepts
+	// done setup, now send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 
-	// test if the accept messages are correct
+	// test if the Accept messages are correct
 	for i := 0; i < r.N/2; i++ {
 		a := (<-messageChan).(*Accept)
 		if a.cmds[0].Compare(propose.cmds[0]) != 0 ||
@@ -36,14 +35,14 @@ func TestRecvAcceptOk(t *testing.T) {
 	g := makeReplicaGroup(5)
 	r, messageChan, _ := setup(g)
 
-	// done setup, now send accepts
+	// done setup, now send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 	for i := 0; i < r.N/2; i++ {
 		ac := (<-messageChan).(*Accept)
 		g[i+1].recvAccept(ac, messageChan)
 	}
 
-	// test if the accepts's reply is ok (they should be)
+	// test if the Accepts's reply is ok (they should be)
 	for i := 0; i < r.N/2; i++ {
 		ar := (<-messageChan).(*AcceptReply)
 		if !ar.ok {
@@ -53,12 +52,12 @@ func TestRecvAcceptOk(t *testing.T) {
 	testNoMessageLeft(messageChan, t)
 }
 
-// Test if we refuse the Accepts correctly
+// Test if we reject the Accepts correctly
 func TestRecvAcceptNackBallot(t *testing.T) {
 	g := makeReplicaGroup(5)
 	r, messageChan, _ := setup(g)
 
-	// done setup, let's send accepts
+	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 	for i := 0; i < r.N/2; i++ {
 		ac := (<-messageChan).(*Accept)
@@ -83,7 +82,7 @@ func TestRecvAcceptNackStatus(t *testing.T) {
 	g := makeReplicaGroup(5)
 	r, messageChan, _ := setup(g)
 
-	// done setup, let send accepts
+	// done setup, let send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 
 	// modify some replica's status to make them reject Accepts
@@ -108,15 +107,15 @@ func TestRecvAcceptNackStatus(t *testing.T) {
 	testNoMessageLeft(messageChan, t)
 }
 
-// Test if the commit messages are sent successfully
+// Test if the Commit messages are sent successfully
 func TestSendCommit(t *testing.T) {
 	g := makeReplicaGroup(5)
 	r, messageChan, propose := setup(g)
 
-	// done setup, let's send commits
+	// done setup, let's send Commits
 	r.sendCommit(r.Id, 2, messageChan)
 
-	// test the commit messages
+	// test the Commit messages
 	for i := 1; i < r.N; i++ {
 		m := (<-messageChan).(*Commit)
 		if m.cmds[0].Compare(propose.cmds[0]) != 0 ||
@@ -133,12 +132,12 @@ func TestSendCommit(t *testing.T) {
 	testNoMessageLeft(messageChan, t)
 }
 
-// Receive the commit messages and accept them
+// Receive the Commit messages and accept them
 func TestRecvCommitOk(t *testing.T) {
 	g := makeReplicaGroup(5)
 	r, messageChan, propose := setup(g)
 
-	// done setup, let's send commits
+	// done setup, let's send Commits
 	r.sendCommit(r.Id, 2, messageChan)
 
 	for i := 1; i < r.N; i++ {
@@ -146,7 +145,7 @@ func TestRecvCommitOk(t *testing.T) {
 		g[i].recvCommit(m)
 	}
 
-	// test commit if the commmit messages are correct
+	// test if the Commmit messages are correct
 	for i := 1; i < r.N; i++ {
 		inst := g[i].InstanceMatrix[r.Id][2]
 		if inst.cmds[0].Compare(propose.cmds[0]) != 0 ||
@@ -159,22 +158,19 @@ func TestRecvCommitOk(t *testing.T) {
 		if inst.status != committed {
 			t.Fatal("status is not committed")
 		}
-		if inst.ballot != r.InstanceMatrix[r.Id][2].ballot {
-			t.Fatal("ballot is not correct")
-		}
 	}
 	testNoMessageLeft(messageChan, t)
 }
 
-// Receive the commits, but ignore them
+// Receive the Commits, but ignore them
 func TestRecvCommitIgnore(t *testing.T) {
-	g := makeReplicaGroup(5)
+	g := makeReplicaGroup(10)
 	r, messageChan, propose := setup(g)
 
-	// done setup, let's send commits
+	// done setup, let's send Commits
 	r.sendCommit(r.Id, 2, messageChan)
 
-	// modify some replica's instances, make them ignore the coming commits
+	// modify some replica's instances, make them ignore the coming Commits
 	g[1].InstanceMatrix[r.Id][2] = &Instance{
 		cmds: []cmd.Command{
 			cmd.Command("paxos"),
@@ -187,6 +183,7 @@ func TestRecvCommitIgnore(t *testing.T) {
 		},
 		status: executed,
 	}
+	// g[3] should still accept the Commit, although it has a larger ballot
 	g[3].InstanceMatrix[r.Id][2] = &Instance{
 		cmds: []cmd.Command{
 			cmd.Command("paxos"),
@@ -194,20 +191,20 @@ func TestRecvCommitIgnore(t *testing.T) {
 		ballot: makeLargerBallot(r.InstanceMatrix[r.Id][2].ballot),
 	}
 
-	// recv commits
+	// recv Commits
 	for i := 1; i < r.N; i++ {
 		m := (<-messageChan).(*Commit)
 		g[i].recvCommit(m)
 	}
 
-	// test if some replicas really ignore the commits
+	// test if some replicas really ignore the Commits
 	for i := 1; i < 3; i++ {
 		if g[i].InstanceMatrix[r.Id][2].cmds[0].Compare(cmd.Command("paxos")) != 0 {
 			t.Fatal("command not correct, should be 'paxos'")
 		}
 	}
-	// test if other replicas accept the commits
-	for i := 4; i < r.N; i++ {
+	// test if other replicas accept the Commits
+	for i := 3; i < r.N; i++ {
 		inst := g[i].InstanceMatrix[r.Id][2]
 		if inst.cmds[0].Compare(propose.cmds[0]) != 0 ||
 			inst.cmds[1].Compare(propose.cmds[1]) != 0 {
@@ -219,9 +216,6 @@ func TestRecvCommitIgnore(t *testing.T) {
 		if inst.status != committed {
 			t.Fatal("status is not committed")
 		}
-		if inst.ballot != r.InstanceMatrix[r.Id][2].ballot {
-			t.Fatal("ballot is not correct")
-		}
 	}
 	testNoMessageLeft(messageChan, t)
 }
@@ -231,7 +225,7 @@ func TestAcceptAndCommit(t *testing.T) {
 	g := makeReplicaGroup(5)
 	r, messageChan, _ := setup(g)
 
-	// done setup, let's send accepts
+	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 
 	for i := 0; i < r.N/2; i++ {
@@ -257,7 +251,7 @@ func TestAcceptAndAbortCommit(t *testing.T) {
 	g := makeReplicaGroup(5)
 	r, messageChan, _ := setup(g)
 
-	// done setup, let's send accepts
+	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 
 	for i := 0; i < r.N/2; i++ {
@@ -298,7 +292,6 @@ func testNoMessageLeft(messageChan chan Message, t *testing.T) {
 }
 
 func setup(g []*Replica) (*Replica, chan Message, *Propose) {
-	//log = logger.ScreenErrLogger
 	messageChan := make(chan Message, 100)
 	propose := &Propose{
 		cmds: []cmd.Command{
