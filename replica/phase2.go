@@ -180,9 +180,11 @@ func (r *Replica) recvCommit(cm *Commit) {
 			return
 		}
 
+		// record the commit instance
 		inst.cmds = cm.cmds
 		//inst.seq = cm.seq
 		inst.deps = cm.deps
 		inst.status = committed
+		// TODO: persistence store
 	}
 }
