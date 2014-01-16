@@ -48,7 +48,7 @@ func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 			deps:   ac.deps,
 			ballot: ac.ballot,
 			status: accepted,
-			info:   new(InstanceInfo),
+			info:   NewInstanceInfo(),
 		}
 		inst = r.InstanceMatrix[ac.repId][ac.insId] // for the reference in below
 	} else {
@@ -147,7 +147,7 @@ func (r *Replica) recvCommit(cm *Commit) {
 			cmds:   cm.cmds,
 			deps:   cm.deps,
 			status: committed,
-			info:   new(InstanceInfo),
+			info:   NewInstanceInfo(),
 		}
 	} else {
 		if inst.status >= committed { // ignore the message
