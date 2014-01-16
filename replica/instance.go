@@ -30,6 +30,10 @@ type Instance struct {
 	info   *InstanceInfo
 }
 
+func NewInstanceInfo() *InstanceInfo {
+	return &InstanceInfo{}
+}
+
 func (Inst *Instance) allReplyTheSame() bool {
 	return Inst.info.haveDiffReply == false
 }

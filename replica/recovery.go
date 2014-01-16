@@ -20,7 +20,6 @@ func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Mess
 			messageChan <- prepare
 		}
 	}()
-
 }
 
 func (r *Replica) recvPrepare(prepare *Prepare, messageChan chan Message) {
@@ -47,14 +46,14 @@ func (r *Replica) recvPrepareReply(ppReply *PrepareReply, messageChan chan Messa
 	inst.info.prepareCnt++
 
 	// for all replies, we only need to keep the ones with highest ballot number
-	// inst.ppreplies = r.keepmaxballot()
+	// inst.ppreplies = r.updateMaxBallot()
 
 	// majority replies
 	if inst.info.prepareCnt >= r.N/2 {
-          // if inst.ppreplies.find( committed )
-          // else if inst.ppreplies.find( accepted )
-          // else if inst.ppreplies ( >= r.N/2, including itself) preaccepted for default balllot
-          // else if inst.ppreplies.find( preaccepted )
-          // else default: no-op
+		// if inst.ppreplies.find( committed )
+		// else if inst.ppreplies.find( accepted )
+		// else if inst.ppreplies ( >= r.N/2, including itself) preaccepted for default balllot
+		// else if inst.ppreplies.find( preaccepted )
+		// else default: no-op
 	}
 }

@@ -25,7 +25,7 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 		deps:   deps,
 		status: preaccepted,
 		ballot: makeBallot(uint64(r.epoch), uint64(r.Id)),
-		info:   new(InstanceInfo),
+		info:   NewInstanceInfo(),
 	}
 
 	// TODO: before we send the message, we need to record and sync it in disk/persistent.
@@ -56,7 +56,7 @@ func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) 
 		cmds:   preAccept.cmds,
 		deps:   deps,
 		status: preaccepted,
-		info:   new(InstanceInfo),
+		info:   NewInstanceInfo(),
 	}
 	if preAccept.insId >= r.MaxInstanceNum[preAccept.repId] {
 		r.MaxInstanceNum[preAccept.repId] = preAccept.insId + 1
