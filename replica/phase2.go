@@ -157,8 +157,8 @@ func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan M
 
 func (r *Replica) recvCommit(cm *Commit) {
 	// TODO: remember to discuss on MaxInstanceNum
-	if r.MaxInstanceNum[ac.repId] <= ac.insId {
-		r.MaxInstanceNum[ac.repId] = ac.insId + 1
+	if r.MaxInstanceNum[cm.repId] <= cm.insId {
+		r.MaxInstanceNum[cm.repId] = cm.insId + 1
 	}
 
 	inst := r.InstanceMatrix[cm.repId][cm.insId]
