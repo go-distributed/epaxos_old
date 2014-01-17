@@ -78,11 +78,13 @@ func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 		repId:  ac.repId,
 		insId:  ac.insId,
 	}
-	r.sendAcceptReply(ar, messageChan)
+	r.sendAcceptReply(ar, messageChan) // should not block
 }
 
 func (r *Replica) sendAcceptReply(ar *AcceptReply, messageChan chan Message) {
-	messageChan <- ar
+	go func() {
+		messageChan <- ar
+	}()
 }
 
 func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {

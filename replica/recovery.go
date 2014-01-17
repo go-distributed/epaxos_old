@@ -22,17 +22,43 @@ func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Mess
 	}()
 }
 
-func (r *Replica) recvPrepare(prepare *Prepare, messageChan chan Message) {
-	inst := r.InstanceMatrix[prepare.repId][prepare.insId]
+func (r *Replica) recvPrepare(pp *Prepare, messageChan chan Message) {
+	inst := r.InstanceMatrix[pp.repId][pp.insId]
 	if inst == nil {
-		// reply prepareOK
-	} else {
-		if prepare.ballot > inst.ballot {
-			// reply prepareOK
-		} else {
-			// reply NACK
+		// reply PrepareReply with no-op and invalid status
+		pr := &PrepareReply{
+			ok:     true,
+			ballot: pp.ballot,
+			status: -1,  // hardcode, not a best approach
+			cmds:   nil, // No-op, should be agreed by state machine
+			deps:   nil,
+			repId:  pp.repId,
+			insId:  pp.insId,
 		}
+		r.sendPrepareReply(pr, messageChan)
+		return
 	}
+	// we have some info about the instance
+	pr := &PrepareReply{
+		status: inst.status,
+		cmds:   inst.cmds,
+		deps:   inst.deps,
+		repId:  pp.repId,
+		insId:  pp.insId,
+	}
+	if pp.ballot >= inst.ballot {
+		pr.ok = true
+		inst.ballot = pp.ballot
+	} else {
+		pr.ok = false
+	}
+	r.sendPrepareReply(pr, messageChan)
+}
+
+func (r *Replica) sendPrepareReply(pr *PrepareReply, messageChan chan Message) {
+	go func() {
+		messageChan <- pr
+	}()
 }
 
 func (r *Replica) recvPrepareReply(ppReply *PrepareReply, messageChan chan Message) {
