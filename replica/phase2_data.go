@@ -10,14 +10,14 @@ type Accept struct {
 	deps   []InstanceIdType
 	repId  int
 	insId  InstanceIdType
-	ballot uint64
+	ballot *Ballot
 }
 
 type AcceptReply struct {
 	ok     bool
 	repId  int
 	insId  InstanceIdType
-	ballot uint64
+	ballot *Ballot
 	status int8
 }
 
