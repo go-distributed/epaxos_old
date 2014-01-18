@@ -29,7 +29,7 @@ func makeBallot(epoch, replicaId uint64) uint64 {
 }
 
 func getBallotNumber(b uint64) uint64 {
-	return (b & ballotNumberMask)
+	return ((b & ballotNumberMask) >> ballotReplicaIdWidth)
 }
 
 func isInitialBallot(b uint64) bool {

@@ -14,8 +14,8 @@ func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Mess
 			// Assumed no-op to be nil here.
 			// we need to do more since state machine needs to know how to interpret it.
 			cmds:   nil,
-			deps:   nil,
-			status: -1, // 'none' might be a conflicting name. We currenctly pick '-1' for it
+			deps:   make([]InstanceIdType, r.N), // TODO: makeInitialDeps
+			status: -1,                          // 'none' might be a conflicting name. We currenctly pick '-1' for it
 			ballot: makeBallot(uint64(r.Epoch), uint64(r.Id)),
 			info:   NewInstanceInfo(),
 		}
@@ -32,7 +32,7 @@ func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Mess
 	}
 
 	go func() {
-		for i := 0; i < r.N; i++ {
+		for i := 0; i < r.N-1; i++ {
 			messageChan <- prepare
 		}
 	}()
