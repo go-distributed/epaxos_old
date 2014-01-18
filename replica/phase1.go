@@ -24,7 +24,7 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 		cmds:   propose.cmds,
 		deps:   deps,
 		status: preaccepted,
-		ballot: makeBallot(uint64(r.epoch), uint64(r.Id)),
+		ballot: makeBallot(uint64(r.Epoch), uint64(r.Id)),
 		info:   NewInstanceInfo(),
 	}
 
@@ -123,8 +123,7 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 	}
 }
 
-func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType,
-	repId int) ([]InstanceIdType, bool) {
+func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType, repId int) ([]InstanceIdType, bool) {
 	changed := false
 
 	for rep := 0; rep < r.N; rep++ {

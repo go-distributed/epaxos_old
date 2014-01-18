@@ -7,16 +7,32 @@ import (
 var _ = fmt.Printf
 
 func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Message) {
-	inst := r.InstanceMatrix[L][insId]
-	if inst == nil {
+	if r.InstanceMatrix[L][insId] == nil {
 		// TODO: we need to commit an instance that doesn't exist.
+		r.InstanceMatrix[L][insId] = &Instance{
+			// TODO:
+			// Assumed no-op to be nil here.
+			// we need to do more since state machine needs to know how to interpret it.
+			cmds:   nil,
+			deps:   make([]InstanceIdType, r.N), // TODO: makeInitialDeps
+			status: -1,                          // 'none' might be a conflicting name. We currenctly pick '-1' for it
+			ballot: makeBallot(uint64(r.Epoch), uint64(r.Id)),
+			info:   NewInstanceInfo(),
+		}
 	}
+
+	inst := r.InstanceMatrix[L][insId]
+
 	inst.ballot = makeLargerBallot(inst.ballot)
 
-	prepare := &Prepare{}
+	prepare := &Prepare{
+		ballot: inst.ballot,
+		repId:  L,
+		insId:  insId,
+	}
 
 	go func() {
-		for i := 0; i < r.N; i++ {
+		for i := 0; i < r.N-1; i++ {
 			messageChan <- prepare
 		}
 	}()
