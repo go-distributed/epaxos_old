@@ -68,6 +68,7 @@ func (r *Replica) recvPrepare(pp *Prepare, messageChan chan Message) {
 	} else {
 		pr.ok = false
 	}
+	pr.ballot = inst.ballot
 	r.sendPrepareReply(pr, messageChan)
 }
 
