@@ -64,7 +64,7 @@ func TestRecvPrepareNoInstance(t *testing.T) {
 			ballot: pp.ballot,
 			status: -1,
 			cmds:   nil,
-			deps:   nil,
+			deps:   make([]InstanceIdType, r.N), // TODO: makeInitialDeps
 			repId:  0,
 			insId:  conflictNotFound + 1,
 		}) {
@@ -100,14 +100,15 @@ func TestRecvPrepareReject(t *testing.T) {
 	for i := 1; i < r.N; i++ {
 		pr := (<-messageChan).(*PrepareReply)
 		if !reflect.DeepEqual(pr, &PrepareReply{
-			ok:     false,
+			ok: false,
+			// info of the receivers' instance
 			status: accepted,
 			cmds: []cmd.Command{
 				cmd.Command("paxos"),
 			},
 			deps: []InstanceIdType{1, 0, 0, 0, 0},
 			// ballot num == 1
-			ballot: g[i].makeInitialBallot().getIncNumCopy(),
+			ballot: g[i].makeInitialBallot().getIncNumCopy(), // receiver's ballot
 			repId:  0,
 			insId:  conflictNotFound + 1,
 		}) {
@@ -142,13 +143,14 @@ func TestRecvPrepareAccept(t *testing.T) {
 	for i := 1; i < r.N; i++ {
 		pr := (<-messageChan).(*PrepareReply)
 		if !reflect.DeepEqual(pr, &PrepareReply{
-			ok:     true,
+			ok: true,
+			// info of the receivers' instance
 			status: accepted,
 			cmds: []cmd.Command{
 				cmd.Command("paxos"),
 			},
 			deps:   []InstanceIdType{1, 0, 0, 0, 0},
-			ballot: r.makeInitialBallot().getIncNumCopy(),
+			ballot: r.makeInitialBallot().getIncNumCopy(), // sender's ballot
 			repId:  0,
 			insId:  conflictNotFound + 1,
 		}) {
