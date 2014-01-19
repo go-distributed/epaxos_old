@@ -46,11 +46,9 @@ func TestSendPrepare(t *testing.T) {
 
 // Receivers have no info about the Instance in Prepare
 // Test if they will accept the Prepare message
-func TestRecvPrepareNoop(t *testing.T) {
-	// make prepare message to test for:
-	// - ballot is larger than most recent one
-	// - ballot isn't larger
-	// - there's no instance!
+// PrepareReply should be ok with no-op
+// Success: Accept the Prepares, Fail: Reject the Prepares
+func TestRecvPrepareNoInstance(t *testing.T) {
 	g, r, messageChan := recoveryTestSetup(5)
 	r.sendPrepare(0, conflictNotFound+1, messageChan)
 	var pp *Prepare
@@ -78,6 +76,8 @@ func TestRecvPrepareNoop(t *testing.T) {
 
 // Receivers have larger ballot
 // Test if they will reject the Prepare message
+// PrepareReply should be not ok, with their version of instances
+// Success: Reject the Prepares, Fail: Accept the Prepares
 func TestRecvPrepareReject(t *testing.T) {
 	g, r, messageChan := recoveryTestSetup(5)
 	r.sendPrepare(0, conflictNotFound+1, messageChan)
@@ -90,8 +90,9 @@ func TestRecvPrepareReject(t *testing.T) {
 			cmds: []cmd.Command{
 				cmd.Command("paxos"),
 			},
-			deps:   []InstanceIdType{1, 0, 0, 0, 0},
-			ballot: makeLargerBallot(makeBallot(0, uint64(i))),
+			deps: []InstanceIdType{1, 0, 0, 0, 0},
+			// ballot num == 1
+			ballot: g[i].makeInitialBallot().getIncNumCopy(),
 		}
 		g[i].recvPrepare(pp, messageChan)
 	}
@@ -104,8 +105,9 @@ func TestRecvPrepareReject(t *testing.T) {
 			cmds: []cmd.Command{
 				cmd.Command("paxos"),
 			},
-			deps:   []InstanceIdType{1, 0, 0, 0, 0},
-			ballot: makeLargerBallot(makeBallot(0, uint64(i))),
+			deps: []InstanceIdType{1, 0, 0, 0, 0},
+			// ballot num == 1
+			ballot: g[i].makeInitialBallot().getIncNumCopy(),
 			repId:  0,
 			insId:  conflictNotFound + 1,
 		}) {
@@ -117,6 +119,8 @@ func TestRecvPrepareReject(t *testing.T) {
 
 // Receivers have smaller ballot
 // Test if they will accepte the Prepare message
+// PrepareReply should be ok, with their version of instance
+// Success: Accept the Prepares, Fail: Reject the Prepares
 func TestRecvPrepareAccept(t *testing.T) {
 	g, r, messageChan := recoveryTestSetup(5)
 	r.sendPrepare(0, conflictNotFound+1, messageChan)
@@ -130,7 +134,7 @@ func TestRecvPrepareAccept(t *testing.T) {
 				cmd.Command("paxos"),
 			},
 			deps:   []InstanceIdType{1, 0, 0, 0, 0},
-			ballot: makeBallot(0, uint64(i)),
+			ballot: g[i].makeInitialBallot(),
 		}
 		g[i].recvPrepare(pp, messageChan)
 	}
@@ -144,11 +148,10 @@ func TestRecvPrepareAccept(t *testing.T) {
 				cmd.Command("paxos"),
 			},
 			deps:   []InstanceIdType{1, 0, 0, 0, 0},
-			ballot: makeLargerBallot(makeBallot(0, uint64(0))),
+			ballot: r.makeInitialBallot().getIncNumCopy(),
 			repId:  0,
 			insId:  conflictNotFound + 1,
 		}) {
-			t.Log(pr)
 			t.Fatal("PrepareReply message error")
 		}
 	}
