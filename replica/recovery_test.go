@@ -80,23 +80,26 @@ func TestRecvPrepareNoInstance(t *testing.T) {
 // Success: Reject the Prepares, Fail: Accept the Prepares
 func TestRecvPrepareReject(t *testing.T) {
 	g, r, messageChan := recoveryTestSetup(5)
-	r.sendPrepare(0, conflictNotFound+1, messageChan)
+	r.sendPrepare(0, conflictNotFound+2, messageChan)
 
 	for i := 1; i < r.N; i++ {
-		pp := (<-messageChan).(*Prepare)
 		// create instance in receivers, and make larger ballots
-		g[i].InstanceMatrix[0][conflictNotFound+1] = &Instance{
+		g[i].InstanceMatrix[0][conflictNotFound+2] = &Instance{
 			status: accepted,
 			cmds: []cmd.Command{
 				cmd.Command("paxos"),
 			},
 			deps: []InstanceIdType{1, 0, 0, 0, 0},
-			// ballot num == 1
-			ballot: g[i].makeInitialBallot().getIncNumCopy(),
+			// ballot num == 2
+			ballot: r.makeInitialBallot().getIncNumCopy().getIncNumCopy(),
 		}
+	}
+	// recv Prepares
+	for i := 1; i < r.N; i++ {
+		pp := (<-messageChan).(*Prepare)
 		g[i].recvPrepare(pp, messageChan)
 	}
-
+	// test PrepareReplies
 	for i := 1; i < r.N; i++ {
 		pr := (<-messageChan).(*PrepareReply)
 		if !reflect.DeepEqual(pr, &PrepareReply{
@@ -107,10 +110,10 @@ func TestRecvPrepareReject(t *testing.T) {
 				cmd.Command("paxos"),
 			},
 			deps: []InstanceIdType{1, 0, 0, 0, 0},
-			// ballot num == 1
-			ballot: g[i].makeInitialBallot().getIncNumCopy(), // receiver's ballot
+			// ballot num == 2
+			ballot: r.makeInitialBallot().getIncNumCopy().getIncNumCopy(), // receiver's ballot
 			repId:  0,
-			insId:  conflictNotFound + 1,
+			insId:  conflictNotFound + 2,
 		}) {
 			t.Fatal("PrepareReply message error")
 		}
@@ -124,22 +127,25 @@ func TestRecvPrepareReject(t *testing.T) {
 // Success: Accept the Prepares, Fail: Reject the Prepares
 func TestRecvPrepareAccept(t *testing.T) {
 	g, r, messageChan := recoveryTestSetup(5)
-	r.sendPrepare(0, conflictNotFound+1, messageChan)
+	r.sendPrepare(0, conflictNotFound+2, messageChan)
 
+	// create instance in receivers, and make larger ballots
 	for i := 1; i < r.N; i++ {
-		pp := (<-messageChan).(*Prepare)
-		// create instance in receivers, and make larger ballots
-		g[i].InstanceMatrix[0][conflictNotFound+1] = &Instance{
+		g[i].InstanceMatrix[0][conflictNotFound+2] = &Instance{
 			status: accepted,
 			cmds: []cmd.Command{
 				cmd.Command("paxos"),
 			},
 			deps:   []InstanceIdType{1, 0, 0, 0, 0},
-			ballot: g[i].makeInitialBallot(),
+			ballot: r.makeInitialBallot(),
 		}
+	}
+	// recv Prepares
+	for i := 1; i < r.N; i++ {
+		pp := (<-messageChan).(*Prepare)
 		g[i].recvPrepare(pp, messageChan)
 	}
-
+	// test PrepareReplies
 	for i := 1; i < r.N; i++ {
 		pr := (<-messageChan).(*PrepareReply)
 		if !reflect.DeepEqual(pr, &PrepareReply{
@@ -152,7 +158,7 @@ func TestRecvPrepareAccept(t *testing.T) {
 			deps:   []InstanceIdType{1, 0, 0, 0, 0},
 			ballot: r.makeInitialBallot().getIncNumCopy(), // sender's ballot
 			repId:  0,
-			insId:  conflictNotFound + 1,
+			insId:  conflictNotFound + 2,
 		}) {
 			t.Fatal("PrepareReply message error")
 		}

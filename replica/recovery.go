@@ -61,7 +61,7 @@ func (r *Replica) recvPrepare(pp *Prepare, messageChan chan Message) {
 		repId:  pp.repId,
 		insId:  pp.insId,
 	}
-	if pp.ballot.Compare(inst.ballot) > 0 {
+	if pp.ballot.Compare(inst.ballot) >= 0 {
 		pr.ok = true
 		inst.ballot = pp.ballot
 	} else {
