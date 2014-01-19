@@ -45,9 +45,8 @@ func (r *Replica) recvPrepare(pp *Prepare, messageChan chan Message) {
 		pr := &PrepareReply{
 			ok:     true,
 			ballot: pp.ballot,
-			status: -1,  // hardcode, not a best approach
-			cmds:   nil, // No-op, should be agreed by state machine
-			deps:   nil,
+			status: -1,                          // TODO: hardcode, not a best approach
+			deps:   make([]InstanceIdType, r.N), // TODO: makeInitialDeps
 			repId:  pp.repId,
 			insId:  pp.insId,
 		}
@@ -62,12 +61,13 @@ func (r *Replica) recvPrepare(pp *Prepare, messageChan chan Message) {
 		repId:  pp.repId,
 		insId:  pp.insId,
 	}
-	if pp.ballot.Compare(inst.ballot) > 0 {
+	if pp.ballot.Compare(inst.ballot) >= 0 {
 		pr.ok = true
 		inst.ballot = pp.ballot
 	} else {
 		pr.ok = false
 	}
+	pr.ballot = inst.ballot
 	r.sendPrepareReply(pr, messageChan)
 }
 
