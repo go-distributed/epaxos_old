@@ -25,7 +25,7 @@ type PreAccept struct {
 	deps   []InstanceIdType
 	repId  int
 	insId  InstanceIdType
-	ballot uint64
+	ballot *Ballot
 }
 
 type PreAcceptOK struct {

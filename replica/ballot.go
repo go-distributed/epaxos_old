@@ -2,36 +2,68 @@ package replica
 
 const (
 	// Ballot has a format like:
-	// Epoch   | Ballot  | ReplicaId
+	// Epoch   | Number  | ReplicaId
 	// 20 bits | 36 bits | 8 bits
-	ballotEpochWidth     uint64 = 20
-	ballotNumberWidth    uint64 = 36
-	ballotReplicaIdWidth uint64 = 8
-	ballotEpochMask      uint64 = ((1 << ballotEpochWidth) - 1) << (ballotNumberWidth + ballotReplicaIdWidth)
-	ballotNumberMask     uint64 = (^((1 << ballotReplicaIdWidth) - 1)) & ((1 << (ballotNumberWidth + ballotReplicaIdWidth)) - 1)
-	ballotReplicaIdMask  uint64 = (1 << ballotReplicaIdWidth) - 1
+	ballotEpochWidth     uint = 20
+	ballotNumberWidth    uint = 36
+	ballotReplicaIdWidth uint = 8
 
-	ballotNumberUnit uint64 = (uint64(1) << ballotReplicaIdWidth)
+	ballotEpochMask     uint64 = ((1 << ballotEpochWidth) - 1) << (ballotNumberWidth + ballotReplicaIdWidth)
+	ballotNumberMask    uint64 = ((1 << ballotNumberWidth) - 1) << (ballotReplicaIdWidth)
+	ballotReplicaIdMask uint64 = (1 << ballotReplicaIdWidth) - 1
 )
 
-func makeLargerBallot(b uint64) uint64 {
-	return (b & ballotEpochMask) |
-		(((b & ballotNumberMask) + ballotNumberUnit) & ballotNumberMask) |
-		(b & ballotReplicaIdMask)
+type Ballot struct {
+	epoch     uint32
+	number    uint64
+	replicaId uint8
 }
 
-func getEpoch(b uint64) uint64 {
-	return b & ballotEpochMask
+func (r *Replica) makeInitialBallot() *Ballot {
+	return &Ballot{
+		epoch:     r.Epoch,
+		number:    0,
+		replicaId: uint8(r.Id),
+	}
 }
 
-func makeBallot(epoch, replicaId uint64) uint64 {
-	return (epoch << (64 - ballotEpochWidth - ballotNumberWidth)) | replicaId
+func (b *Ballot) toUint64() uint64 {
+	return ((uint64(b.epoch) << (ballotNumberWidth + ballotReplicaIdWidth)) |
+		(b.number << ballotReplicaIdWidth) |
+		uint64(b.replicaId))
 }
 
-func getBallotNumber(b uint64) uint64 {
-	return ((b & ballotNumberMask) >> ballotReplicaIdWidth)
+func (b *Ballot) fromUint64(num uint64) {
+	b.epoch = uint32((num & ballotEpochMask) >> (ballotNumberWidth + ballotReplicaIdWidth))
+	b.number = ((num & ballotNumberMask) >> ballotReplicaIdWidth)
+	b.replicaId = uint8(num & ballotReplicaIdMask)
 }
 
-func isInitialBallot(b uint64) bool {
-	return (b & ballotNumberMask) == 0
+func (b *Ballot) Compare(other *Ballot) int {
+	if b.epoch != other.epoch {
+		return int(b.epoch - other.epoch)
+	}
+	if b.number != other.number {
+		return int(b.number - other.number)
+	}
+	if b.replicaId != other.replicaId {
+		return int(b.replicaId - other.replicaId)
+	}
+	return 0
+}
+
+func (b *Ballot) incNumber() {
+	b.number++
+}
+
+func (b *Ballot) getNumber() uint64 {
+	return b.number
+}
+
+func (b *Ballot) getIncNumCopy() *Ballot {
+	return &Ballot{
+		b.epoch,
+		b.number + 1,
+		b.replicaId,
+	}
 }

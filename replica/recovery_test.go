@@ -20,7 +20,7 @@ func TestSendPrepare(t *testing.T) {
 	for i := 0; i < r.N-1; i++ {
 		message := <-messageChan
 		prepare := message.(*Prepare)
-		if getBallotNumber(prepare.ballot) != 1 {
+		if prepare.ballot.getNumber() != 1 {
 			t.Fatal("expected ballot number to be incremented to 1")
 		}
 	}
@@ -36,7 +36,7 @@ func TestSendPrepare(t *testing.T) {
 	for i := 0; i < r.N-1; i++ {
 		message := <-messageChan
 		prepare := message.(*Prepare)
-		if getBallotNumber(prepare.ballot) != 2 {
+		if prepare.ballot.getNumber() != 2 {
 			t.Fatal("expected ballot number to be incremented to 2")
 		}
 	}

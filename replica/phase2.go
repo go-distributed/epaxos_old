@@ -52,7 +52,7 @@ func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 		}
 		inst = r.InstanceMatrix[ac.repId][ac.insId] // for the reference in below
 	} else {
-		if inst.status >= accepted || ac.ballot < inst.ballot {
+		if inst.status >= accepted || ac.ballot.Compare(inst.ballot) < 0 {
 			// return nack with status
 			ar := &AcceptReply{
 				ok:     false,

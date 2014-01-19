@@ -24,7 +24,7 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 		cmds:   propose.cmds,
 		deps:   deps,
 		status: preaccepted,
-		ballot: makeBallot(uint64(r.Epoch), uint64(r.Id)),
+		ballot: r.makeInitialBallot(),
 		info:   NewInstanceInfo(),
 	}
 
