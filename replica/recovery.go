@@ -16,14 +16,14 @@ func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Mess
 			cmds:   nil,
 			deps:   make([]InstanceIdType, r.N), // TODO: makeInitialDeps
 			status: -1,                          // 'none' might be a conflicting name. We currenctly pick '-1' for it
-			ballot: makeBallot(uint64(r.Epoch), uint64(r.Id)),
+			ballot: r.makeInitialBallot(),
 			info:   NewInstanceInfo(),
 		}
 	}
 
 	inst := r.InstanceMatrix[L][insId]
 
-	inst.ballot = makeLargerBallot(inst.ballot)
+	inst.ballot.incNumber()
 
 	prepare := &Prepare{
 		ballot: inst.ballot,
@@ -62,7 +62,7 @@ func (r *Replica) recvPrepare(pp *Prepare, messageChan chan Message) {
 		repId:  pp.repId,
 		insId:  pp.insId,
 	}
-	if pp.ballot >= inst.ballot {
+	if pp.ballot.Compare(inst.ballot) > 0 {
 		pr.ok = true
 		inst.ballot = pp.ballot
 	} else {

@@ -60,7 +60,7 @@ func TestRecvAcceptNackBallot(t *testing.T) {
 		ac := (<-messageChan).(*Accept)
 		g[i+1].InstanceMatrix[r.Id][2] = &Instance{
 			// make local ballot larger, so the replica will reject Accepts
-			ballot: makeLargerBallot(r.InstanceMatrix[r.Id][1].ballot),
+			ballot: r.InstanceMatrix[r.Id][1].ballot.getIncNumCopy(),
 		}
 		g[i+1].recvAccept(ac, messageChan)
 	}
@@ -181,7 +181,7 @@ func TestRecvCommitIgnore(t *testing.T) {
 		cmds: []cmd.Command{
 			cmd.Command("paxos"),
 		},
-		ballot: makeLargerBallot(r.InstanceMatrix[r.Id][2].ballot),
+		ballot: r.InstanceMatrix[r.Id][2].ballot.getIncNumCopy(),
 	}
 
 	// recv Commits
@@ -249,7 +249,7 @@ func TestAcceptAndAbortCommit(t *testing.T) {
 		ac := (<-messageChan).(*Accept)
 		g[i+1].InstanceMatrix[r.Id][2] = &Instance{
 			// make local ballot larger, so the replica will reject Accepts
-			ballot: makeLargerBallot(r.InstanceMatrix[r.Id][1].ballot),
+			ballot: r.InstanceMatrix[r.Id][1].ballot.getIncNumCopy(),
 		}
 		g[i+1].recvAccept(ac, messageChan)
 	}

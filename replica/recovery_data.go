@@ -5,14 +5,14 @@ import (
 )
 
 type Prepare struct {
-	ballot uint64
+	ballot *Ballot
 	repId  int
 	insId  InstanceIdType
 }
 
 type PrepareReply struct {
 	ok     bool
-	ballot uint64
+	ballot *Ballot
 	status int8
 	cmds   []cmd.Command
 	deps   []InstanceIdType

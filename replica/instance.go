@@ -26,7 +26,7 @@ type Instance struct {
 	cmds   []cmd.Command
 	deps   []InstanceIdType
 	status int8
-	ballot uint64
+	ballot *Ballot
 	info   *InstanceInfo
 }
 
