@@ -41,13 +41,13 @@ func (b *Ballot) fromUint64(num uint64) {
 
 func (b *Ballot) Compare(other *Ballot) int {
 	if b.epoch != other.epoch {
-		return int(b.epoch - other.epoch)
+		return int(int32(b.epoch - other.epoch))
 	}
 	if b.number != other.number {
-		return int(b.number - other.number)
+		return int(int64(b.number - other.number))
 	}
 	if b.replicaId != other.replicaId {
-		return int(b.replicaId - other.replicaId)
+		return int(int8(b.replicaId - other.replicaId))
 	}
 	return 0
 }
