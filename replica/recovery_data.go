@@ -5,19 +5,19 @@ import (
 )
 
 type Prepare struct {
-	ballot *Ballot
-	repId  int
-	insId  InstanceIdType
+	ballot     *Ballot
+	replicaId  int
+	instanceId InstanceId
 }
 
 type PrepareReply struct {
-	ok     bool
-	ballot *Ballot
-	status int8
-	cmds   []cmd.Command
-	deps   []InstanceIdType
-	repId  int
-	insId  InstanceIdType
+	ok         bool
+	ballot     *Ballot
+	replicaId  int
+	instanceId InstanceId
+	status     int8
+	cmds       []cmd.Command
+	deps       []InstanceId
 }
 
 func (*Prepare) getType() uint8 {

@@ -2,34 +2,36 @@ package replica
 
 import (
 	"fmt"
+
+	cmd "github.com/go-epaxos/epaxos/command"
 )
 
 var _ = fmt.Printf
 
-func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Message) {
-	if r.InstanceMatrix[L][insId] == nil {
+func (r *Replica) sendPrepare(L int, instanceId InstanceId, messageChan chan Message) {
+	if r.InstanceMatrix[L][instanceId] == nil {
 		// TODO: we need to commit an instance that doesn't exist.
-		r.InstanceMatrix[L][insId] = &Instance{
+		r.InstanceMatrix[L][instanceId] = &Instance{
 			// TODO:
 			// Assumed no-op to be nil here.
 			// we need to do more since state machine needs to know how to interpret it.
 			cmds:   nil,
-			deps:   make([]InstanceIdType, r.Size), // TODO: makeInitialDeps
-			status: -1,                             // 'none' might be a conflicting name. We currenctly pick '-1' for it
+			deps:   make([]InstanceId, r.Size), // TODO: makeInitialDeps
+			status: -1,                         // 'none' might be a conflicting name. We currenctly pick '-1' for it
 			ballot: r.makeInitialBallot(),
 			info:   NewInstanceInfo(),
 		}
 	}
 
-	inst := r.InstanceMatrix[L][insId]
+	inst := r.InstanceMatrix[L][instanceId]
 
 	inst.ballot.incNumber()
 	inst.ballot.setRId(r.Id)
 
 	prepare := &Prepare{
-		ballot: inst.ballot,
-		repId:  L,
-		insId:  insId,
+		ballot:     inst.ballot,
+		replicaId:  L,
+		instanceId: instanceId,
 	}
 
 	go func() {
@@ -40,27 +42,27 @@ func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Mess
 }
 
 func (r *Replica) recvPrepare(pp *Prepare, messageChan chan Message) {
-	inst := r.InstanceMatrix[pp.repId][pp.insId]
+	inst := r.InstanceMatrix[pp.replicaId][pp.instanceId]
 	if inst == nil {
 		// reply PrepareReply with no-op and invalid status
 		pr := &PrepareReply{
-			ok:     true,
-			ballot: pp.ballot,
-			status: -1,                             // TODO: hardcode, not a best approach
-			deps:   make([]InstanceIdType, r.Size), // TODO: makeInitialDeps
-			repId:  pp.repId,
-			insId:  pp.insId,
+			ok:         true,
+			ballot:     pp.ballot,
+			status:     -1,                         // TODO: hardcode, not a best approach
+			deps:       make([]InstanceId, r.Size), // TODO: makeInitialDeps
+			replicaId:  pp.replicaId,
+			instanceId: pp.instanceId,
 		}
 		r.sendPrepareReply(pr, messageChan)
 		return
 	}
 	// we have some info about the instance
 	pr := &PrepareReply{
-		status: inst.status,
-		cmds:   inst.cmds,
-		deps:   inst.deps,
-		repId:  pp.repId,
-		insId:  pp.insId,
+		status:     inst.status,
+		cmds:       inst.cmds,
+		deps:       inst.deps,
+		replicaId:  pp.replicaId,
+		instanceId: pp.instanceId,
 	}
 	if pp.ballot.Compare(inst.ballot) >= 0 {
 		pr.ok = true
@@ -78,25 +80,29 @@ func (r *Replica) sendPrepareReply(pr *PrepareReply, messageChan chan Message) {
 	}()
 }
 
-func (r *Replica) recvPrepareReply(ppReply *PrepareReply, messageChan chan Message) {
-	inst := r.InstanceMatrix[ppReply.repId][ppReply.insId]
+func (r *Replica) recvPrepareReply(p *PrepareReply, m chan Message) {
+	inst := r.InstanceMatrix[p.replicaId][p.instanceId]
 
 	if inst == nil {
 		// it shouldn't happen
 		return
 	}
 
-	inst.info.prepareCnt++
+	inst.info.prepareCount++
 
 	// for all replies, we only need to keep the ones with highest ballot number
 	// inst.ppreplies = r.updateMaxBallot()
 
 	// majority replies
-	if inst.info.prepareCnt >= r.Size/2 {
+	if inst.info.prepareCount >= r.Size/2 {
 		// if inst.ppreplies.find( committed )
 		// else if inst.ppreplies.find( accepted )
 		// else if inst.ppreplies ( >= r.Size/2, including itself) preaccepted for default balllot
 		// else if inst.ppreplies.find( preaccepted )
 		// else default: no-op
 	}
+}
+
+func (r *Replica) updateRecovery(cmds []cmd.Command, deps []InstanceId, status int) {
+
 }

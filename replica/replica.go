@@ -13,22 +13,22 @@ const (
 	conflictNotFound = 0
 )
 
-type InstanceIdType uint64
+type InstanceId uint64
 
 type Replica struct {
 	Id             int
 	Size           int
-	MaxInstanceNum []InstanceIdType // the highest instance number seen for each replica
+	MaxInstanceNum []InstanceId // the highest instance number seen for each replica
 	InstanceMatrix [][]*Instance
 	StateMac       command.StateMachine
 	Epoch          uint32
 }
 
-func startNewReplica(repId, size int) (r *Replica) {
+func startNewReplica(replicaId, size int) (r *Replica) {
 	r = &Replica{
-		Id:             repId,
+		Id:             replicaId,
 		Size:           size,
-		MaxInstanceNum: make([]InstanceIdType, size),
+		MaxInstanceNum: make([]InstanceId, size),
 		InstanceMatrix: make([][]*Instance, size),
 		StateMac:       new(dummySM.DummySM),
 		Epoch:          0,
@@ -36,7 +36,7 @@ func startNewReplica(repId, size int) (r *Replica) {
 
 	for i := 0; i < size; i++ {
 		r.InstanceMatrix[i] = make([]*Instance, 1024)
-		r.MaxInstanceNum[i] = conflictNotFound + 1
+		r.MaxInstanceNum[i] = conflictNotFound
 	}
 
 	return r

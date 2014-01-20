@@ -13,13 +13,19 @@ const (
 
 // a bookkeeping for infos like maxBallot, # of nack, # of ok, etc
 type InstanceInfo struct {
-	preaccCnt     int
-	haveDiffReply bool
+	preAcceptCount int
+	haveDiffReply  bool
 
-	acceptNackCnt int
-	acceptOkCnt   int
+	acceptNackCount int
+	acceptCount     int
 
-	prepareCnt int
+	prepareCount int
+
+	recovery *RecoveryInfo
+}
+
+type RecoveryInfo struct {
+	preAcceptCount int
 }
 
 type Instance struct {

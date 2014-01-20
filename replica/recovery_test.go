@@ -60,13 +60,13 @@ func TestRecvPrepareNoInstance(t *testing.T) {
 	for i := 1; i < r.Size; i++ {
 		pr := (<-messageChan).(*PrepareReply)
 		if !reflect.DeepEqual(pr, &PrepareReply{
-			ok:     true,
-			ballot: pp.ballot,
-			status: -1,
-			cmds:   nil,
-			deps:   make([]InstanceIdType, r.Size), // TODO: makeInitialDeps
-			repId:  0,
-			insId:  conflictNotFound + 1,
+			ok:         true,
+			ballot:     pp.ballot,
+			status:     -1,
+			cmds:       nil,
+			deps:       make([]InstanceId, r.Size), // TODO: makeInitialDeps
+			replicaId:  0,
+			instanceId: conflictNotFound + 1,
 		}) {
 			t.Fatal("PrepareReply message error")
 		}
@@ -89,7 +89,7 @@ func TestRecvPrepareReject(t *testing.T) {
 			cmds: []cmd.Command{
 				cmd.Command("paxos"),
 			},
-			deps: []InstanceIdType{1, 0, 0, 0, 0},
+			deps: []InstanceId{1, 0, 0, 0, 0},
 			// ballot num == 2
 			ballot: r.makeInitialBallot().getIncNumCopy().getIncNumCopy(),
 		}
@@ -109,11 +109,11 @@ func TestRecvPrepareReject(t *testing.T) {
 			cmds: []cmd.Command{
 				cmd.Command("paxos"),
 			},
-			deps: []InstanceIdType{1, 0, 0, 0, 0},
+			deps: []InstanceId{1, 0, 0, 0, 0},
 			// ballot num == 2
-			ballot: r.makeInitialBallot().getIncNumCopy().getIncNumCopy(), // receiver's ballot
-			repId:  0,
-			insId:  conflictNotFound + 2,
+			ballot:     r.makeInitialBallot().getIncNumCopy().getIncNumCopy(), // receiver's ballot
+			replicaId:  0,
+			instanceId: conflictNotFound + 2,
 		}) {
 			t.Fatal("PrepareReply message error")
 		}
@@ -136,7 +136,7 @@ func TestRecvPrepareAccept(t *testing.T) {
 			cmds: []cmd.Command{
 				cmd.Command("paxos"),
 			},
-			deps:   []InstanceIdType{1, 0, 0, 0, 0},
+			deps:   []InstanceId{1, 0, 0, 0, 0},
 			ballot: r.makeInitialBallot(),
 		}
 	}
@@ -155,10 +155,10 @@ func TestRecvPrepareAccept(t *testing.T) {
 			cmds: []cmd.Command{
 				cmd.Command("paxos"),
 			},
-			deps:   []InstanceIdType{1, 0, 0, 0, 0},
-			ballot: r.makeInitialBallot().getIncNumCopy(), // sender's ballot
-			repId:  0,
-			insId:  conflictNotFound + 2,
+			deps:       []InstanceId{1, 0, 0, 0, 0},
+			ballot:     r.makeInitialBallot().getIncNumCopy(), // sender's ballot
+			replicaId:  0,
+			instanceId: conflictNotFound + 2,
 		}) {
 			t.Fatal("PrepareReply message error")
 		}
