@@ -8,11 +8,7 @@ import (
 var _ = fmt.Printf
 
 func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
-	// update deps
-	deps := make([]InstanceIdType, r.Size)
-	// we need to initiate deps to conflictnotfound. Since it's 0, we keep that assumption.
-
-	deps, _ = r.update(propose.cmds, deps, r.Id)
+	deps := r.findDependencies(propose.cmds)
 
 	// increment instance number
 	instNo := r.MaxInstanceNum[r.Id]
@@ -123,12 +119,35 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 	}
 }
 
+// findDependencies finds the most recent interference instance from each instance space
+// of this replica.
+// It returns the ids of these instances as an array.
+func (r *Replica) findDependencies(cmds []cmd.Command) []InstanceIdType {
+	deps := make([]InstanceIdType, r.Size)
+
+	for i := range r.InstanceMatrix {
+		instances := r.InstanceMatrix[i]
+
+		for id := r.MaxInstanceNum[i] - 1; id > 0; id-- {
+			if instances[id] == nil {
+				continue
+			}
+
+			if r.StateMac.HaveConflicts(cmds, instances[id].cmds) {
+				deps[i] = id
+				break
+			}
+		}
+	}
+
+	return deps
+}
+
 func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType, repId int) ([]InstanceIdType, bool) {
 	changed := false
 
 	for rep := 0; rep < r.Size; rep++ {
-
-		// We don't need to update deps herebecause
+		// We don't need to update deps here because
 		// - it's from remote instance and
 		// - we know that it knows latest dependency for itself.
 		if r.Id != repId && rep == repId {
