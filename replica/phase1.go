@@ -2,6 +2,7 @@ package replica
 
 import (
 	"fmt"
+
 	cmd "github.com/go-epaxos/epaxos/command"
 )
 
@@ -102,12 +103,11 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 	inst.info.preaccCnt++
 
 	// recvpreacceptok doesn't need this {
-	deps, same := r.union(inst.deps, paReply.deps)
+	same := inst.deps.union(paReply.deps)
 	if !same {
 		if inst.info.preaccCnt > 1 {
 			inst.info.haveDiffReply = true
 		}
-		inst.deps = deps
 	}
 	// }
 
@@ -174,17 +174,4 @@ func (r *Replica) scanConflicts(instances []*Instance, cmds []cmd.Command, start
 	}
 
 	return conflictNotFound, false
-}
-
-func (r *Replica) union(deps1, deps2 []InstanceIdType) ([]InstanceIdType, bool) {
-	same := true
-	for rep := 0; rep < r.Size; rep++ {
-		if deps1[rep] != deps2[rep] {
-			same = false
-			if deps1[rep] < deps2[rep] {
-				deps1[rep] = deps2[rep]
-			}
-		}
-	}
-	return deps1, same
 }
