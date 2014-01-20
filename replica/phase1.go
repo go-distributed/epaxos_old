@@ -137,6 +137,8 @@ func (r *Replica) findDependencies(cmds []cmd.Command) []InstanceIdType {
 	return deps
 }
 
+// updateDependencies updates the passed in dependencies from replica[from].
+// return updated dependencies and whether the dependencies has changed.
 func (r *Replica) updateDependencies(cmds []cmd.Command, deps []InstanceIdType, from int) ([]InstanceIdType, bool) {
 	changed := false
 
@@ -158,6 +160,8 @@ func (r *Replica) updateDependencies(cmds []cmd.Command, deps []InstanceIdType, 
 	return deps, changed
 }
 
+// scanConflicts scans the instances from start to end (high to low).
+// return the highest instance that has conflicts with passed in cmds.
 func (r *Replica) scanConflicts(instances []*Instance, cmds []cmd.Command, start InstanceIdType, end InstanceIdType) (InstanceIdType, bool) {
 	for i := start; i > end; i-- {
 		if instances[i] == nil {
