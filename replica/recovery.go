@@ -26,7 +26,7 @@ func (r *Replica) sendPrepare(L int, instanceId InstanceId, messageChan chan Mes
 	inst := r.InstanceMatrix[L][instanceId]
 
 	inst.ballot.incNumber()
-	inst.ballot.setRId(r.Id)
+	inst.ballot.setReplicaId(r.Id)
 
 	prepare := &Prepare{
 		ballot:     inst.ballot,
@@ -88,19 +88,22 @@ func (r *Replica) recvPrepareReply(p *PrepareReply, m chan Message) {
 		return
 	}
 
-	inst.info.prepareCount++
+	// ignore nack and old replies
+	if p.ok && p.ballot == inst.ballot {
+		if inst.info.prepareCount++; inst.info.preAcceptCount < r.Size/2 {
+			return
+		}
+	}
 
 	// for all replies, we only need to keep the ones with highest ballot number
 	// inst.ppreplies = r.updateMaxBallot()
 
 	// majority replies
-	if inst.info.prepareCount >= r.Size/2 {
-		// if inst.ppreplies.find( committed )
-		// else if inst.ppreplies.find( accepted )
-		// else if inst.ppreplies ( >= r.Size/2, including itself) preaccepted for default balllot
-		// else if inst.ppreplies.find( preaccepted )
-		// else default: no-op
-	}
+	// if inst.ppreplies.find( committed )
+	// else if inst.ppreplies.find( accepted )
+	// else if inst.ppreplies ( >= r.Size/2, including itself) preaccepted for default balllot
+	// else if inst.ppreplies.find( preaccepted )
+	// else default: no-op
 }
 
 func (r *Replica) updateRecovery(cmds []cmd.Command, deps []InstanceId, status int) {
