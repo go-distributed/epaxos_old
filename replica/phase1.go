@@ -159,17 +159,17 @@ func (r *Replica) updateDependencies(cmds []cmd.Command, deps []InstanceIdType, 
 }
 
 func (r *Replica) scanConflicts(instances []*Instance, cmds []cmd.Command, start InstanceIdType, end InstanceIdType) (InstanceIdType, bool) {
-	for id := start; id > end; id-- {
-		if instances[id] == nil {
+	for i := start; i > end; i-- {
+		if instances[i] == nil {
 			continue
 		}
 		// we only need to find the highest instance in conflict
-		if r.StateMac.HaveConflicts(cmds, instances[id].cmds) {
-			return InstanceIdType(id), true
+		if r.StateMac.HaveConflicts(cmds, instances[i].cmds) {
+			return i, true
 		}
 	}
 
-	return 0, false
+	return conflictNotFound, false
 }
 
 func (r *Replica) union(deps1, deps2 []InstanceIdType) ([]InstanceIdType, bool) {
