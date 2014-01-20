@@ -27,7 +27,7 @@ func (r *Replica) sendAccept(repId int, insId InstanceIdType, messageChan chan M
 	}
 
 	// TODO: handle timeout
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		go func() {
 			messageChan <- accept
 		}()
@@ -107,7 +107,7 @@ func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
 
 	if ar.ok {
 		inst.info.acceptOkCnt++
-		if inst.info.acceptOkCnt >= (r.N / 2) {
+		if inst.info.acceptOkCnt >= (r.Size / 2) {
 			r.sendCommit(ar.repId, ar.insId, messageChan)
 		}
 	}
@@ -130,7 +130,7 @@ func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan M
 		repId: repId,
 		insId: insId,
 	}
-	for i := 0; i < r.N-1; i++ {
+	for i := 0; i < r.Size-1; i++ {
 		go func() {
 			messageChan <- cm
 		}()

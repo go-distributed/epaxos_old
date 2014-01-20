@@ -14,7 +14,7 @@ func TestSendAccept(t *testing.T) {
 	r.sendAccept(r.Id, 2, messageChan)
 
 	// test if the Accept messages are correct
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		a := (<-messageChan).(*Accept)
 		if a.cmds[0].Compare(propose.cmds[0]) != 0 ||
 			a.cmds[1].Compare(propose.cmds[1]) != 0 {
@@ -35,13 +35,13 @@ func TestRecvAcceptOk(t *testing.T) {
 
 	// done setup, now send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		ac := (<-messageChan).(*Accept)
 		g[i+1].recvAccept(ac, messageChan)
 	}
 
 	// test if the Accepts's reply is ok (they should be)
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		ar := (<-messageChan).(*AcceptReply)
 		if !ar.ok {
 			t.Fatal("should be ok")
@@ -56,7 +56,7 @@ func TestRecvAcceptNackBallot(t *testing.T) {
 
 	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		ac := (<-messageChan).(*Accept)
 		g[i+1].InstanceMatrix[r.Id][2] = &Instance{
 			// make local ballot larger, so the replica will reject Accepts
@@ -65,7 +65,7 @@ func TestRecvAcceptNackBallot(t *testing.T) {
 		g[i+1].recvAccept(ac, messageChan)
 	}
 
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		ar := (<-messageChan).(*AcceptReply)
 		if ar.ok {
 			t.Fatal("should not be ok")
@@ -89,12 +89,12 @@ func TestRecvAcceptNackStatus(t *testing.T) {
 		status: committed,
 	}
 
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		ac := (<-messageChan).(*Accept)
 		g[i+1].recvAccept(ac, messageChan)
 	}
 
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		ar := (<-messageChan).(*AcceptReply)
 		if ar.ok {
 			t.Fatal("should not be ok")
@@ -111,7 +111,7 @@ func TestSendCommit(t *testing.T) {
 	r.sendCommit(r.Id, 2, messageChan)
 
 	// test the Commit messages
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		m := (<-messageChan).(*Commit)
 		if m.cmds[0].Compare(propose.cmds[0]) != 0 ||
 			m.cmds[1].Compare(propose.cmds[1]) != 0 {
@@ -134,13 +134,13 @@ func TestRecvCommitOk(t *testing.T) {
 	// done setup, let's send Commits
 	r.sendCommit(r.Id, 2, messageChan)
 
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		m := (<-messageChan).(*Commit)
 		g[i].recvCommit(m)
 	}
 
 	// test if the Commmit messages are correct
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		inst := g[i].InstanceMatrix[r.Id][2]
 		if inst.cmds[0].Compare(propose.cmds[0]) != 0 ||
 			inst.cmds[1].Compare(propose.cmds[1]) != 0 {
@@ -185,7 +185,7 @@ func TestRecvCommitIgnore(t *testing.T) {
 	}
 
 	// recv Commits
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		m := (<-messageChan).(*Commit)
 		g[i].recvCommit(m)
 	}
@@ -197,7 +197,7 @@ func TestRecvCommitIgnore(t *testing.T) {
 		}
 	}
 	// test if other replicas accept the Commits
-	for i := 3; i < r.N; i++ {
+	for i := 3; i < r.Size; i++ {
 		inst := g[i].InstanceMatrix[r.Id][2]
 		if inst.cmds[0].Compare(propose.cmds[0]) != 0 ||
 			inst.cmds[1].Compare(propose.cmds[1]) != 0 {
@@ -220,18 +220,18 @@ func TestAcceptAndCommit(t *testing.T) {
 	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		ac := (<-messageChan).(*Accept)
 		g[i+1].recvAccept(ac, messageChan)
 	}
 
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		ar := (<-messageChan).(*AcceptReply)
 		r.recvAcceptReply(ar, messageChan)
 	}
 
 	// now r should have received enough AcceptReplies, and send out the Commits
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		m := (<-messageChan).(*Commit)
 		g[i].recvCommit(m)
 	}
@@ -245,7 +245,7 @@ func TestAcceptAndAbortCommit(t *testing.T) {
 	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		ac := (<-messageChan).(*Accept)
 		g[i+1].InstanceMatrix[r.Id][2] = &Instance{
 			// make local ballot larger, so the replica will reject Accepts
@@ -254,7 +254,7 @@ func TestAcceptAndAbortCommit(t *testing.T) {
 		g[i+1].recvAccept(ac, messageChan)
 	}
 
-	for i := 0; i < r.N/2; i++ {
+	for i := 0; i < r.Size/2; i++ {
 		ar := (<-messageChan).(*AcceptReply)
 		r.recvAcceptReply(ar, messageChan)
 	}

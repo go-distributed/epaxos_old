@@ -2,6 +2,7 @@ package replica
 
 import (
 	"fmt"
+
 	"github.com/go-epaxos/epaxos/command"
 	"github.com/go-epaxos/epaxos/command/dummySM"
 )
@@ -16,24 +17,24 @@ type InstanceIdType uint64
 
 type Replica struct {
 	Id             int
-	N              int
-	MaxInstanceNum []InstanceIdType // the highes instance number seen for each replica
+	Size           int
+	MaxInstanceNum []InstanceIdType // the highest instance number seen for each replica
 	InstanceMatrix [][]*Instance
 	StateMac       command.StateMachine
 	Epoch          uint32
 }
 
-func startNewReplica(repId, N int) (r *Replica) {
+func startNewReplica(repId, size int) (r *Replica) {
 	r = &Replica{
 		Id:             repId,
-		N:              N,
-		MaxInstanceNum: make([]InstanceIdType, N),
-		InstanceMatrix: make([][]*Instance, N),
+		Size:           size,
+		MaxInstanceNum: make([]InstanceIdType, size),
+		InstanceMatrix: make([][]*Instance, size),
 		StateMac:       new(dummySM.DummySM),
 		Epoch:          0,
 	}
 
-	for i := 0; i < N; i++ {
+	for i := 0; i < size; i++ {
 		r.InstanceMatrix[i] = make([]*Instance, 1024)
 		r.MaxInstanceNum[i] = conflictNotFound + 1
 	}
@@ -42,7 +43,11 @@ func startNewReplica(repId, N int) (r *Replica) {
 }
 
 func (r *Replica) fastQuorumSize() int {
-	return r.N - 2
+	return r.Size - 2
+}
+
+func (r *Replica) QuorumSize() int {
+	return r.Size/2 + 1
 }
 
 func (r *Replica) run() {

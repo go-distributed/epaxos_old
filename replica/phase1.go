@@ -9,7 +9,7 @@ var _ = fmt.Printf
 
 func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 	// update deps
-	deps := make([]InstanceIdType, r.N)
+	deps := make([]InstanceIdType, r.Size)
 	// we need to initiate deps to conflictnotfound. Since it's 0, we keep that assumption.
 
 	deps, _ = r.update(propose.cmds, deps, r.Id)
@@ -115,7 +115,7 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 	}
 	// }
 
-	if inst.info.preaccCnt >= r.N/2 && !inst.allReplyTheSame() {
+	if inst.info.preaccCnt >= r.Size/2 && !inst.allReplyTheSame() {
 		// slow path
 
 	} else if inst.info.preaccCnt == r.fastQuorumSize() && inst.allReplyTheSame() {
@@ -126,7 +126,7 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType, repId int) ([]InstanceIdType, bool) {
 	changed := false
 
-	for rep := 0; rep < r.N; rep++ {
+	for rep := 0; rep < r.Size; rep++ {
 
 		// We don't need to update deps herebecause
 		// - it's from remote instance and
@@ -160,7 +160,7 @@ func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType, repId int) (
 
 func (r *Replica) union(deps1, deps2 []InstanceIdType) ([]InstanceIdType, bool) {
 	same := true
-	for rep := 0; rep < r.N; rep++ {
+	for rep := 0; rep < r.Size; rep++ {
 		if deps1[rep] != deps2[rep] {
 			same = false
 			if deps1[rep] < deps2[rep] {

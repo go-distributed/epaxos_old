@@ -14,8 +14,8 @@ func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Mess
 			// Assumed no-op to be nil here.
 			// we need to do more since state machine needs to know how to interpret it.
 			cmds:   nil,
-			deps:   make([]InstanceIdType, r.N), // TODO: makeInitialDeps
-			status: -1,                          // 'none' might be a conflicting name. We currenctly pick '-1' for it
+			deps:   make([]InstanceIdType, r.Size), // TODO: makeInitialDeps
+			status: -1,                             // 'none' might be a conflicting name. We currenctly pick '-1' for it
 			ballot: r.makeInitialBallot(),
 			info:   NewInstanceInfo(),
 		}
@@ -32,7 +32,7 @@ func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Mess
 	}
 
 	go func() {
-		for i := 0; i < r.N-1; i++ {
+		for i := 0; i < r.Size-1; i++ {
 			messageChan <- prepare
 		}
 	}()
@@ -45,8 +45,8 @@ func (r *Replica) recvPrepare(pp *Prepare, messageChan chan Message) {
 		pr := &PrepareReply{
 			ok:     true,
 			ballot: pp.ballot,
-			status: -1,                          // TODO: hardcode, not a best approach
-			deps:   make([]InstanceIdType, r.N), // TODO: makeInitialDeps
+			status: -1,                             // TODO: hardcode, not a best approach
+			deps:   make([]InstanceIdType, r.Size), // TODO: makeInitialDeps
 			repId:  pp.repId,
 			insId:  pp.insId,
 		}
@@ -91,10 +91,10 @@ func (r *Replica) recvPrepareReply(ppReply *PrepareReply, messageChan chan Messa
 	// inst.ppreplies = r.updateMaxBallot()
 
 	// majority replies
-	if inst.info.prepareCnt >= r.N/2 {
+	if inst.info.prepareCnt >= r.Size/2 {
 		// if inst.ppreplies.find( committed )
 		// else if inst.ppreplies.find( accepted )
-		// else if inst.ppreplies ( >= r.N/2, including itself) preaccepted for default balllot
+		// else if inst.ppreplies ( >= r.Size/2, including itself) preaccepted for default balllot
 		// else if inst.ppreplies.find( preaccepted )
 		// else default: no-op
 	}
