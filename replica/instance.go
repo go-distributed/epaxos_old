@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	preaccepted int8 = iota
+	preAccepted int8 = iota
 	accepted
 	committed
 	executed
@@ -34,6 +34,19 @@ func NewInstanceInfo() *InstanceInfo {
 	return &InstanceInfo{}
 }
 
-func (Inst *Instance) allReplyTheSame() bool {
-	return Inst.info.haveDiffReply == false
+func NewInstance(cmds []cmd.Command, deps dependencies, status int8) *Instance {
+	return &Instance{
+		cmds:   cmds,
+		deps:   deps,
+		status: status,
+		info:   NewInstanceInfo(),
+	}
+}
+
+func (i *Instance) allReplyTheSame() bool {
+	return i.info.haveDiffReply == false
+}
+
+func (i *Instance) afterStatus(status int8) bool {
+	return i.status > status
 }

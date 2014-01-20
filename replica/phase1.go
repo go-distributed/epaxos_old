@@ -20,7 +20,7 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 	r.InstanceMatrix[r.Id][instNo] = &Instance{
 		cmds:   propose.cmds,
 		deps:   deps,
-		status: preaccepted,
+		status: preAccepted,
 		ballot: r.makeInitialBallot(),
 		info:   NewInstanceInfo(),
 	}
@@ -52,7 +52,7 @@ func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) 
 	r.InstanceMatrix[preAccept.repId][preAccept.insId] = &Instance{
 		cmds:   preAccept.cmds,
 		deps:   deps,
-		status: preaccepted,
+		status: preAccepted,
 		info:   NewInstanceInfo(),
 	}
 	if preAccept.insId >= r.MaxInstanceNum[preAccept.repId] {
@@ -82,11 +82,15 @@ func (r *Replica) recvPreAcceptOK(paOK *PreAcceptOK) {
 	// We need some refactoring between these two functions.
 }
 
+// 1.
+// 2.
+// 3.
 func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
-	inst := r.InstanceMatrix[paReply.repId][paReply.insId]
+	instance := r.InstanceMatrix[paReply.repId][paReply.insId]
 
-	if inst == nil {
+	if instance == nil {
 		// TODO: should not happen
+		panic("handlePreAcceptReply: receive nil instance")
 		return
 	}
 
@@ -95,26 +99,26 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 	// for a period of time. And after it comes back, things have changed. It's been accepted, or
 	// committed, or even executed. Since it's accepted by majority already, we ignore it here and hope
 	// the instance would be fixed later (by asking dependencies when executing commands).
-	if inst.status > preaccepted {
-		// TODO: slow reply
+	if instance.afterStatus(preAccepted) {
+		// TODO: log here.
 		return
 	}
 
-	inst.info.preaccCnt++
+	instance.info.preaccCnt++
 
 	// recvpreacceptok doesn't need this {
-	same := inst.deps.union(paReply.deps)
+	same := instance.deps.union(paReply.deps)
 	if !same {
-		if inst.info.preaccCnt > 1 {
-			inst.info.haveDiffReply = true
+		if instance.info.preaccCnt > 1 {
+			instance.info.haveDiffReply = true
 		}
 	}
 	// }
 
-	if inst.info.preaccCnt >= r.Size/2 && !inst.allReplyTheSame() {
+	if instance.info.preaccCnt >= r.Size/2 && !instance.allReplyTheSame() {
 		// slow path
 
-	} else if inst.info.preaccCnt == r.fastQuorumSize() && inst.allReplyTheSame() {
+	} else if instance.info.preaccCnt == r.fastQuorumSize() && instance.allReplyTheSame() {
 		// fast path
 	}
 }
