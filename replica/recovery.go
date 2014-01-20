@@ -24,6 +24,7 @@ func (r *Replica) sendPrepare(L int, insId InstanceIdType, messageChan chan Mess
 	inst := r.InstanceMatrix[L][insId]
 
 	inst.ballot.incNumber()
+	inst.ballot.setRId(r.Id)
 
 	prepare := &Prepare{
 		ballot: inst.ballot,

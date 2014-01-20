@@ -70,6 +70,10 @@ func (b *Ballot) getNumber() uint64 {
 	return b.number
 }
 
+func (b *Ballot) setRId(rId int) {
+	b.replicaId = uint8(rId)
+}
+
 func (b *Ballot) getIncNumCopy() *Ballot {
 	return &Ballot{
 		b.epoch,
