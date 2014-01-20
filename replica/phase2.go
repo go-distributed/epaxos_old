@@ -9,21 +9,21 @@ import (
 // instId is an id of the already updated instance
 // messageChan is a toy channel for emulating broadcast
 // TODO: return error
-func (r *Replica) sendAccept(repId int, insId InstanceIdType, messageChan chan Message) {
-	inst := r.InstanceMatrix[repId][insId]
+func (r *Replica) sendAccept(replicaId int, instanceId InstanceId, messageChan chan Message) {
+	inst := r.InstanceMatrix[replicaId][instanceId]
 	if inst == nil {
 		// shouldn't get here
-		panic("shouldn't get here, repId = " + strconv.Itoa(repId) + " insId = " + strconv.Itoa(int(insId)))
+		panic("shouldn't get here, replicaId = " + strconv.Itoa(replicaId) + " instanceId = " + strconv.Itoa(int(instanceId)))
 	}
 	inst.status = accepted
 
 	// TODO: persistent store the status
 	accept := &Accept{
-		cmds:   inst.cmds,
-		deps:   inst.deps,
-		repId:  repId,
-		insId:  insId,
-		ballot: inst.ballot,
+		cmds:       inst.cmds,
+		deps:       inst.deps,
+		replicaId:  replicaId,
+		instanceId: instanceId,
+		ballot:     inst.ballot,
 	}
 
 	// TODO: handle timeout
@@ -36,30 +36,30 @@ func (r *Replica) sendAccept(repId int, insId InstanceIdType, messageChan chan M
 
 func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 	// TODO: remember to discuss on MaxInstanceNum
-	if r.MaxInstanceNum[ac.repId] <= ac.insId {
-		r.MaxInstanceNum[ac.repId] = ac.insId + 1
+	if r.MaxInstanceNum[ac.replicaId] <= ac.instanceId {
+		r.MaxInstanceNum[ac.replicaId] = ac.instanceId + 1
 	}
 
-	inst := r.InstanceMatrix[ac.repId][ac.insId]
+	inst := r.InstanceMatrix[ac.replicaId][ac.instanceId]
 
 	if inst == nil {
-		r.InstanceMatrix[ac.repId][ac.insId] = &Instance{
+		r.InstanceMatrix[ac.replicaId][ac.instanceId] = &Instance{
 			cmds:   ac.cmds,
 			deps:   ac.deps,
 			ballot: ac.ballot,
 			status: accepted,
 			info:   NewInstanceInfo(),
 		}
-		inst = r.InstanceMatrix[ac.repId][ac.insId] // for the reference in below
+		inst = r.InstanceMatrix[ac.replicaId][ac.instanceId] // for the reference in below
 	} else {
 		if inst.status >= accepted || ac.ballot.Compare(inst.ballot) < 0 {
 			// return nack with status
 			ar := &AcceptReply{
-				ok:     false,
-				repId:  ac.repId,
-				insId:  ac.insId,
-				ballot: inst.ballot,
-				status: inst.status,
+				ok:         false,
+				replicaId:  ac.replicaId,
+				instanceId: ac.instanceId,
+				ballot:     inst.ballot,
+				status:     inst.status,
 			}
 			r.sendAcceptReply(ar, messageChan)
 			return
@@ -73,10 +73,10 @@ func (r *Replica) recvAccept(ac *Accept, messageChan chan Message) {
 
 	// reply with ok
 	ar := &AcceptReply{
-		ok:     true,
-		ballot: inst.ballot,
-		repId:  ac.repId,
-		insId:  ac.insId,
+		ok:         true,
+		ballot:     inst.ballot,
+		replicaId:  ac.replicaId,
+		instanceId: ac.instanceId,
 	}
 	r.sendAcceptReply(ar, messageChan) // should not block
 }
@@ -88,10 +88,10 @@ func (r *Replica) sendAcceptReply(ar *AcceptReply, messageChan chan Message) {
 }
 
 func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
-	inst := r.InstanceMatrix[ar.repId][ar.insId]
+	inst := r.InstanceMatrix[ar.replicaId][ar.instanceId]
 	if inst == nil {
 		// TODO: should not get here
-		panic("shouldn't get here, repId = " + strconv.Itoa(ar.repId) + " insId = " + strconv.Itoa(int(ar.insId)))
+		panic("shouldn't get here, replicaId = " + strconv.Itoa(ar.replicaId) + " instanceId = " + strconv.Itoa(int(ar.instanceId)))
 	}
 
 	if inst.status > accepted {
@@ -106,18 +106,18 @@ func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
 	}
 
 	if ar.ok {
-		inst.info.acceptOkCnt++
-		if inst.info.acceptOkCnt >= (r.Size / 2) {
-			r.sendCommit(ar.repId, ar.insId, messageChan)
+		inst.info.acceptCount++
+		if inst.info.acceptCount >= (r.Size / 2) {
+			r.sendCommit(ar.replicaId, ar.instanceId, messageChan)
 		}
 	}
 }
 
-func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan Message) {
-	inst := r.InstanceMatrix[repId][insId]
+func (r *Replica) sendCommit(replicaId int, instanceId InstanceId, messageChan chan Message) {
+	inst := r.InstanceMatrix[replicaId][instanceId]
 	if inst == nil {
 		// shouldn't get here
-		panic("shouldn't get here, repId = " + strconv.Itoa(repId) + " insId = " + strconv.Itoa(int(insId)))
+		panic("shouldn't get here, replicaId = " + strconv.Itoa(replicaId) + " instanceId = " + strconv.Itoa(int(instanceId)))
 	}
 
 	inst.status = committed
@@ -125,10 +125,10 @@ func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan M
 
 	// make Commit message and send it to all
 	cm := &Commit{
-		cmds:  inst.cmds,
-		deps:  inst.deps,
-		repId: repId,
-		insId: insId,
+		cmds:       inst.cmds,
+		deps:       inst.deps,
+		replicaId:  replicaId,
+		instanceId: instanceId,
 	}
 	for i := 0; i < r.Size-1; i++ {
 		go func() {
@@ -139,13 +139,13 @@ func (r *Replica) sendCommit(repId int, insId InstanceIdType, messageChan chan M
 
 func (r *Replica) recvCommit(cm *Commit) {
 	// TODO: remember to discuss on MaxInstanceNum
-	if r.MaxInstanceNum[cm.repId] <= cm.insId {
-		r.MaxInstanceNum[cm.repId] = cm.insId + 1
+	if r.MaxInstanceNum[cm.replicaId] <= cm.instanceId {
+		r.MaxInstanceNum[cm.replicaId] = cm.instanceId + 1
 	}
 
-	inst := r.InstanceMatrix[cm.repId][cm.insId]
+	inst := r.InstanceMatrix[cm.replicaId][cm.instanceId]
 	if inst == nil {
-		r.InstanceMatrix[cm.repId][cm.insId] = &Instance{
+		r.InstanceMatrix[cm.replicaId][cm.instanceId] = &Instance{
 			cmds:   cm.cmds,
 			deps:   cm.deps,
 			status: committed,

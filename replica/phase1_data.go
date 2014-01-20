@@ -21,22 +21,22 @@ type Propose struct {
 }
 
 type PreAccept struct {
-	cmds   []cmd.Command
-	deps   dependencies
-	repId  int
-	insId  InstanceIdType
-	ballot *Ballot
+	cmds       []cmd.Command
+	deps       dependencies
+	replicaId  int
+	instanceId InstanceId
+	ballot     *Ballot
 }
 
 type PreAcceptOK struct {
-	insId InstanceIdType
+	instanceId InstanceId
 }
 
 type PreAcceptReply struct {
-	deps  []InstanceIdType
-	repId int
-	insId InstanceIdType
-	ok    bool
+	deps       []InstanceId
+	replicaId  int
+	instanceId InstanceId
+	ok         bool
 }
 
 func (*PreAccept) getType() uint8 {

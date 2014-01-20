@@ -20,7 +20,7 @@ func TestSendAccept(t *testing.T) {
 			a.cmds[1].Compare(propose.cmds[1]) != 0 {
 			t.Fatal("command isn't equal")
 		}
-		if a.insId != 2 {
+		if a.instanceId != 2 {
 			t.Fatal("instance id should be 2")
 		}
 		if a.deps[0] != 1 {
@@ -117,7 +117,7 @@ func TestSendCommit(t *testing.T) {
 			m.cmds[1].Compare(propose.cmds[1]) != 0 {
 			t.Fatal("command isn't equal")
 		}
-		if m.insId != 2 {
+		if m.instanceId != 2 {
 			t.Fatal("instance id should be 2")
 		}
 		if m.deps[0] != 1 {

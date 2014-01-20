@@ -47,7 +47,7 @@ func TestRecvPropose(t *testing.T) {
 			preAccept.cmds[1].Compare(propose.cmds[1]) != 0 {
 			t.Fatal("command isn't equal")
 		}
-		if preAccept.insId != conflictNotFound+2 {
+		if preAccept.instanceId != conflictNotFound+2 {
 			t.Fatal("instance id is wrong")
 		}
 		if preAccept.deps[0] != conflictNotFound+1 {
@@ -61,10 +61,10 @@ func TestRecvPreAccept(t *testing.T) {
 	messageChan := make(chan Message)
 
 	preAccept1 := &PreAccept{
-		cmds:  []cmd.Command{cmd.Command("hello")},
-		deps:  make([]InstanceIdType, 5),
-		repId: 1,
-		insId: conflictNotFound + 1,
+		cmds:       []cmd.Command{cmd.Command("hello")},
+		deps:       make([]InstanceId, 5),
+		replicaId:  1,
+		instanceId: conflictNotFound + 1,
 	}
 
 	r.recvPreAccept(preAccept1, messageChan)
@@ -75,10 +75,10 @@ func TestRecvPreAccept(t *testing.T) {
 	}
 
 	preAccept2 := &PreAccept{
-		cmds:  []cmd.Command{cmd.Command("hello")},
-		deps:  make([]InstanceIdType, 5),
-		repId: 2,
-		insId: conflictNotFound + 1,
+		cmds:       []cmd.Command{cmd.Command("hello")},
+		deps:       make([]InstanceId, 5),
+		replicaId:  2,
+		instanceId: conflictNotFound + 1,
 	}
 
 	r.recvPreAccept(preAccept2, messageChan)
@@ -94,10 +94,10 @@ func TestRecvPreAccept(t *testing.T) {
 	}
 
 	preAccept3 := &PreAccept{
-		cmds:  []cmd.Command{cmd.Command("world")},
-		deps:  make([]InstanceIdType, 5),
-		repId: 2,
-		insId: conflictNotFound + 2,
+		cmds:       []cmd.Command{cmd.Command("world")},
+		deps:       make([]InstanceId, 5),
+		replicaId:  2,
+		instanceId: conflictNotFound + 2,
 	}
 
 	r.recvPreAccept(preAccept3, messageChan)

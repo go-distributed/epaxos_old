@@ -13,13 +13,19 @@ const (
 
 // a bookkeeping for infos like maxBallot, # of nack, # of ok, etc
 type InstanceInfo struct {
-	preaccCnt     int
-	haveDiffReply bool
+	preAcceptCount  int
+	needAcceptPhase bool
 
-	acceptNackCnt int
-	acceptOkCnt   int
+	acceptNackCount int
+	acceptCount     int
 
-	prepareCnt int
+	prepareCount int
+
+	recovery *RecoveryInfo
+}
+
+type RecoveryInfo struct {
+	preAcceptCount int
 }
 
 type Instance struct {
@@ -43,10 +49,42 @@ func NewInstance(cmds []cmd.Command, deps dependencies, status int8) *Instance {
 	}
 }
 
-func (i *Instance) allReplyTheSame() bool {
-	return i.info.haveDiffReply == false
+func (i *Instance) processPreAcceptReply(par *PreAcceptReply, quorum, fastQuorum int) int8 {
+	i.info.preAcceptCount++
+
+	if update := i.unionDeps(par.deps); !update {
+		if i.preAcceptCount() > 1 {
+			i.setNeedAcceptPhase(true)
+		}
+	}
+
+	if i.preAcceptCount() >= quorum-1 && i.needAcceptPhase() {
+		i.status = accepted
+	}
+
+	if i.preAcceptCount() == fastQuorum && !i.needAcceptPhase() {
+		i.status = committed
+	}
+
+	return i.status
 }
 
-func (i *Instance) afterStatus(status int8) bool {
+func (i *Instance) preAcceptCount() int {
+	return i.info.preAcceptCount
+}
+
+func (i *Instance) needAcceptPhase() bool {
+	return i.info.needAcceptPhase
+}
+
+func (i *Instance) setNeedAcceptPhase(need bool) {
+	i.info.needAcceptPhase = need
+}
+
+func (i *Instance) unionDeps(deps dependencies) bool {
+	return i.deps.union(deps)
+}
+
+func (i *Instance) isAfterStatus(status int8) bool {
 	return i.status > status
 }
