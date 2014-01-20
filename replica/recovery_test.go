@@ -18,7 +18,7 @@ func TestSendPrepare(t *testing.T) {
 	// verify the prepare message for:
 	// - incremented ballot number
 	// - L.i instance
-	for i := 0; i < r.N-1; i++ {
+	for i := 0; i < r.Size-1; i++ {
 		message := <-messageChan
 		prepare := message.(*Prepare)
 		if prepare.ballot.getNumber() != 1 {
@@ -34,7 +34,7 @@ func TestSendPrepare(t *testing.T) {
 	if r.InstanceMatrix[0][conflictNotFound+1].cmds[0].Compare(cmd.Command("hello")) != 0 {
 		t.Fatal("The cmds shouldn't be changed")
 	}
-	for i := 0; i < r.N-1; i++ {
+	for i := 0; i < r.Size-1; i++ {
 		message := <-messageChan
 		prepare := message.(*Prepare)
 		if prepare.ballot.getNumber() != 2 {
@@ -52,19 +52,19 @@ func TestRecvPrepareNoInstance(t *testing.T) {
 	g, r, messageChan := recoveryTestSetup(5)
 	r.sendPrepare(0, conflictNotFound+1, messageChan)
 	var pp *Prepare
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		pp = (<-messageChan).(*Prepare)
 		g[i].recvPrepare(pp, messageChan)
 	}
 	// receivers have no info about the instance, they should reply ok
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		pr := (<-messageChan).(*PrepareReply)
 		if !reflect.DeepEqual(pr, &PrepareReply{
 			ok:     true,
 			ballot: pp.ballot,
 			status: -1,
 			cmds:   nil,
-			deps:   make([]InstanceIdType, r.N), // TODO: makeInitialDeps
+			deps:   make([]InstanceIdType, r.Size), // TODO: makeInitialDeps
 			repId:  0,
 			insId:  conflictNotFound + 1,
 		}) {
@@ -82,7 +82,7 @@ func TestRecvPrepareReject(t *testing.T) {
 	g, r, messageChan := recoveryTestSetup(5)
 	r.sendPrepare(0, conflictNotFound+2, messageChan)
 
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		// create instance in receivers, and make larger ballots
 		g[i].InstanceMatrix[0][conflictNotFound+2] = &Instance{
 			status: accepted,
@@ -95,12 +95,12 @@ func TestRecvPrepareReject(t *testing.T) {
 		}
 	}
 	// recv Prepares
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		pp := (<-messageChan).(*Prepare)
 		g[i].recvPrepare(pp, messageChan)
 	}
 	// test PrepareReplies
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		pr := (<-messageChan).(*PrepareReply)
 		if !reflect.DeepEqual(pr, &PrepareReply{
 			ok: false,
@@ -130,7 +130,7 @@ func TestRecvPrepareAccept(t *testing.T) {
 	r.sendPrepare(0, conflictNotFound+2, messageChan)
 
 	// create instance in receivers, and make larger ballots
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		g[i].InstanceMatrix[0][conflictNotFound+2] = &Instance{
 			status: accepted,
 			cmds: []cmd.Command{
@@ -141,12 +141,12 @@ func TestRecvPrepareAccept(t *testing.T) {
 		}
 	}
 	// recv Prepares
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		pp := (<-messageChan).(*Prepare)
 		g[i].recvPrepare(pp, messageChan)
 	}
 	// test PrepareReplies
-	for i := 1; i < r.N; i++ {
+	for i := 1; i < r.Size; i++ {
 		pr := (<-messageChan).(*PrepareReply)
 		if !reflect.DeepEqual(pr, &PrepareReply{
 			ok: true,

@@ -22,7 +22,7 @@ type Propose struct {
 
 type PreAccept struct {
 	cmds   []cmd.Command
-	deps   []InstanceIdType
+	deps   dependencies
 	repId  int
 	insId  InstanceIdType
 	ballot *Ballot

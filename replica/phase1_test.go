@@ -110,23 +110,22 @@ func TestRecvPreAccept(t *testing.T) {
 }
 
 func TestUnion(t *testing.T) {
-	r := startNewReplica(0, 3)
-	deps1 := []InstanceIdType{0, 0, 0}
-	deps2 := []InstanceIdType{0, 0, 0}
+	deps1 := dependencies{0, 0, 0}
+	deps2 := dependencies{0, 0, 0}
 
-	_, same := r.union(deps1, deps2)
+	same := deps1.union(deps2)
 	if !same {
 		t.Fatal("two deps should be the same")
 	}
 
 	deps1[0] = 1
-	deps1, same = r.union(deps1, deps2)
+	same = deps1.union(deps2)
 	if same || deps1[0] != 1 {
 		t.Fatal("wrong deps after union")
 	}
 
 	deps2[0] = 2
-	deps1, same = r.union(deps1, deps2)
+	same = deps1.union(deps2)
 	if same || deps1[0] != 2 {
 		t.Fatal("wrong deps after union")
 	}

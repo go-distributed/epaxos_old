@@ -2,17 +2,14 @@ package replica
 
 import (
 	"fmt"
+
 	cmd "github.com/go-epaxos/epaxos/command"
 )
 
 var _ = fmt.Printf
 
 func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
-	// update deps
-	deps := make([]InstanceIdType, r.N)
-	// we need to initiate deps to conflictnotfound. Since it's 0, we keep that assumption.
-
-	deps, _ = r.update(propose.cmds, deps, r.Id)
+	deps := r.findDependencies(propose.cmds)
 
 	// increment instance number
 	instNo := r.MaxInstanceNum[r.Id]
@@ -50,7 +47,7 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) {
 	// TODO: we need to check ballot for that coming from prepare phase
 	// update
-	deps, changed := r.update(preAccept.cmds, preAccept.deps, preAccept.repId)
+	deps, changed := r.updateDependencies(preAccept.cmds, preAccept.deps, preAccept.repId)
 	// set cmd
 	r.InstanceMatrix[preAccept.repId][preAccept.insId] = &Instance{
 		cmds:   preAccept.cmds,
@@ -106,16 +103,15 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 	inst.info.preaccCnt++
 
 	// recvpreacceptok doesn't need this {
-	deps, same := r.union(inst.deps, paReply.deps)
+	same := inst.deps.union(paReply.deps)
 	if !same {
 		if inst.info.preaccCnt > 1 {
 			inst.info.haveDiffReply = true
 		}
-		inst.deps = deps
 	}
 	// }
 
-	if inst.info.preaccCnt >= r.N/2 && !inst.allReplyTheSame() {
+	if inst.info.preaccCnt >= r.Size/2 && !inst.allReplyTheSame() {
 		// slow path
 
 	} else if inst.info.preaccCnt == r.fastQuorumSize() && inst.allReplyTheSame() {
@@ -123,50 +119,59 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 	}
 }
 
-func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType, repId int) ([]InstanceIdType, bool) {
+// findDependencies finds the most recent interference instance from each instance space
+// of this replica.
+// It returns the ids of these instances as an array.
+func (r *Replica) findDependencies(cmds []cmd.Command) []InstanceIdType {
+	deps := make([]InstanceIdType, r.Size)
+
+	for i := range r.InstanceMatrix {
+		instances := r.InstanceMatrix[i]
+		start := r.MaxInstanceNum[i] - 1
+
+		if conflict, ok := r.scanConflicts(instances, cmds, start, 0); ok {
+			deps[i] = conflict
+		}
+	}
+
+	return deps
+}
+
+// updateDependencies updates the passed in dependencies from replica[from].
+// return updated dependencies and whether the dependencies has changed.
+func (r *Replica) updateDependencies(cmds []cmd.Command, deps []InstanceIdType, from int) ([]InstanceIdType, bool) {
 	changed := false
 
-	for rep := 0; rep < r.N; rep++ {
-
-		// We don't need to update deps herebecause
-		// - it's from remote instance and
-		// - we know that it knows latest dependency for itself.
-		if r.Id != repId && rep == repId {
+	for curr := range r.InstanceMatrix {
+		// short cut here, the sender knows the latest dependencies for itself
+		if curr == from {
 			continue
 		}
 
-		repInst := r.InstanceMatrix[rep]
-		InstId := r.MaxInstanceNum[rep] - 1
+		instances := r.InstanceMatrix[curr]
+		start, end := r.MaxInstanceNum[curr]-1, deps[curr]
 
-		for ; InstId > deps[rep]; InstId-- {
-			if repInst[InstId] == nil {
-				continue
-			}
-			// we only need to find the highest instance in conflict
-			if r.StateMac.HaveConflicts(cmds, repInst[InstId].cmds) {
-				changed = true
-				break
-			}
-		}
-		// if InstId > original dep, we found newer conflicted instance;
-		// if InstId <= original dep, we didn't find any new conflict;
-		if InstId > deps[rep] {
-			deps[rep] = InstId
+		if conflict, ok := r.scanConflicts(instances, cmds, start, end); ok {
+			changed = true
+			deps[curr] = conflict
 		}
 	}
 
 	return deps, changed
 }
 
-func (r *Replica) union(deps1, deps2 []InstanceIdType) ([]InstanceIdType, bool) {
-	same := true
-	for rep := 0; rep < r.N; rep++ {
-		if deps1[rep] != deps2[rep] {
-			same = false
-			if deps1[rep] < deps2[rep] {
-				deps1[rep] = deps2[rep]
-			}
+// scanConflicts scans the instances from start to end (high to low).
+// return the highest instance that has conflicts with passed in cmds.
+func (r *Replica) scanConflicts(instances []*Instance, cmds []cmd.Command, start InstanceIdType, end InstanceIdType) (InstanceIdType, bool) {
+	for i := start; i > end; i-- {
+		if instances[i] == nil {
+			continue
+		}
+		// we only need to find the highest instance in conflict
+		if r.StateMac.HaveConflicts(cmds, instances[i].cmds) {
+			return i, true
 		}
 	}
-	return deps1, same
+
+	return conflictNotFound, false
 }
