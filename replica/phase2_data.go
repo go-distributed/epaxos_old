@@ -5,28 +5,28 @@ import (
 )
 
 type Accept struct {
-	cmds   []cmd.Command
-	seq    int
-	deps   []InstanceIdType
-	repId  int
-	insId  InstanceIdType
-	ballot *Ballot
+	cmds       []cmd.Command
+	seq        int
+	deps       []InstanceId
+	replicaId  int
+	instanceId InstanceId
+	ballot     *Ballot
 }
 
 type AcceptReply struct {
-	ok     bool
-	repId  int
-	insId  InstanceIdType
-	ballot *Ballot
-	status int8
+	ok         bool
+	replicaId  int
+	instanceId InstanceId
+	ballot     *Ballot
+	status     int8
 }
 
 type Commit struct {
-	cmds  []cmd.Command
-	seq   int
-	deps  []InstanceIdType
-	repId int
-	insId InstanceIdType
+	cmds       []cmd.Command
+	seq        int
+	deps       []InstanceId
+	replicaId  int
+	instanceId InstanceId
 }
 
 func (a *Accept) getType() uint8 {

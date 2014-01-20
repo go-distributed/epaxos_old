@@ -1,6 +1,6 @@
 package replica
 
-type dependencies []InstanceIdType
+type dependencies []InstanceId
 
 // union unions the deps into the receiver
 func (d dependencies) union(other dependencies) bool {

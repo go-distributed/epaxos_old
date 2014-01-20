@@ -12,9 +12,8 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 	deps := r.findDependencies(propose.cmds)
 
 	// increment instance number
-	instNo := r.MaxInstanceNum[r.Id]
-	instNo = instNo
 	r.MaxInstanceNum[r.Id]++
+	instNo := r.MaxInstanceNum[r.Id]
 
 	// set cmds
 	r.InstanceMatrix[r.Id][instNo] = &Instance{
@@ -29,10 +28,10 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 
 	// send PreAccept
 	preAccept := &PreAccept{
-		cmds:  propose.cmds,
-		deps:  deps,
-		repId: r.Id,
-		insId: instNo,
+		cmds:       propose.cmds,
+		deps:       deps,
+		replicaId:  r.Id,
+		instanceId: instNo,
 	}
 
 	// fast quorum
@@ -47,29 +46,29 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) {
 	// TODO: we need to check ballot for that coming from prepare phase
 	// update
-	deps, changed := r.updateDependencies(preAccept.cmds, preAccept.deps, preAccept.repId)
+	deps, changed := r.updateDependencies(preAccept.cmds, preAccept.deps, preAccept.replicaId)
 	// set cmd
-	r.InstanceMatrix[preAccept.repId][preAccept.insId] = &Instance{
+	r.InstanceMatrix[preAccept.replicaId][preAccept.instanceId] = &Instance{
 		cmds:   preAccept.cmds,
 		deps:   deps,
 		status: preaccepted,
 		info:   NewInstanceInfo(),
 	}
-	if preAccept.insId >= r.MaxInstanceNum[preAccept.repId] {
-		r.MaxInstanceNum[preAccept.repId] = preAccept.insId + 1
+	if preAccept.instanceId >= r.MaxInstanceNum[preAccept.replicaId] {
+		r.MaxInstanceNum[preAccept.replicaId] = preAccept.instanceId + 1
 	}
 	// reply
 	go func() {
 		if !changed {
 			paOK := &PreAcceptOK{
-				insId: preAccept.insId,
+				instanceId: preAccept.instanceId,
 			}
 			messageChan <- paOK
 		} else {
 			paReply := &PreAcceptReply{
-				deps:  deps,
-				repId: preAccept.repId,
-				insId: preAccept.insId,
+				deps:       deps,
+				replicaId:  preAccept.replicaId,
+				instanceId: preAccept.instanceId,
 			}
 			messageChan <- paReply
 		}
@@ -83,7 +82,7 @@ func (r *Replica) recvPreAcceptOK(paOK *PreAcceptOK) {
 }
 
 func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
-	inst := r.InstanceMatrix[paReply.repId][paReply.insId]
+	inst := r.InstanceMatrix[paReply.replicaId][paReply.instanceId]
 
 	if inst == nil {
 		// TODO: should not happen
@@ -100,21 +99,21 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 		return
 	}
 
-	inst.info.preaccCnt++
+	inst.info.preAcceptCount++
 
 	// recvpreacceptok doesn't need this {
 	same := inst.deps.union(paReply.deps)
 	if !same {
-		if inst.info.preaccCnt > 1 {
+		if inst.info.preAcceptCount > 1 {
 			inst.info.haveDiffReply = true
 		}
 	}
 	// }
 
-	if inst.info.preaccCnt >= r.Size/2 && !inst.allReplyTheSame() {
+	if inst.info.preAcceptCount >= r.Size/2 && !inst.allReplyTheSame() {
 		// slow path
 
-	} else if inst.info.preaccCnt == r.fastQuorumSize() && inst.allReplyTheSame() {
+	} else if inst.info.preAcceptCount == r.fastQuorumSize() && inst.allReplyTheSame() {
 		// fast path
 	}
 }
@@ -122,12 +121,12 @@ func (r *Replica) recvPreAcceptReply(paReply *PreAcceptReply) {
 // findDependencies finds the most recent interference instance from each instance space
 // of this replica.
 // It returns the ids of these instances as an array.
-func (r *Replica) findDependencies(cmds []cmd.Command) []InstanceIdType {
-	deps := make([]InstanceIdType, r.Size)
+func (r *Replica) findDependencies(cmds []cmd.Command) []InstanceId {
+	deps := make([]InstanceId, r.Size)
 
 	for i := range r.InstanceMatrix {
 		instances := r.InstanceMatrix[i]
-		start := r.MaxInstanceNum[i] - 1
+		start := r.MaxInstanceNum[i]
 
 		if conflict, ok := r.scanConflicts(instances, cmds, start, 0); ok {
 			deps[i] = conflict
@@ -139,7 +138,7 @@ func (r *Replica) findDependencies(cmds []cmd.Command) []InstanceIdType {
 
 // updateDependencies updates the passed in dependencies from replica[from].
 // return updated dependencies and whether the dependencies has changed.
-func (r *Replica) updateDependencies(cmds []cmd.Command, deps []InstanceIdType, from int) ([]InstanceIdType, bool) {
+func (r *Replica) updateDependencies(cmds []cmd.Command, deps []InstanceId, from int) ([]InstanceId, bool) {
 	changed := false
 
 	for curr := range r.InstanceMatrix {
@@ -149,7 +148,7 @@ func (r *Replica) updateDependencies(cmds []cmd.Command, deps []InstanceIdType, 
 		}
 
 		instances := r.InstanceMatrix[curr]
-		start, end := r.MaxInstanceNum[curr]-1, deps[curr]
+		start, end := r.MaxInstanceNum[curr], deps[curr]
 
 		if conflict, ok := r.scanConflicts(instances, cmds, start, end); ok {
 			changed = true
@@ -162,7 +161,7 @@ func (r *Replica) updateDependencies(cmds []cmd.Command, deps []InstanceIdType, 
 
 // scanConflicts scans the instances from start to end (high to low).
 // return the highest instance that has conflicts with passed in cmds.
-func (r *Replica) scanConflicts(instances []*Instance, cmds []cmd.Command, start InstanceIdType, end InstanceIdType) (InstanceIdType, bool) {
+func (r *Replica) scanConflicts(instances []*Instance, cmds []cmd.Command, start InstanceId, end InstanceId) (InstanceId, bool) {
 	for i := start; i > end; i-- {
 		if instances[i] == nil {
 			continue
