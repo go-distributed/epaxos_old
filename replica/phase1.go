@@ -46,7 +46,7 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) {
 	// TODO: we need to check ballot for that coming from prepare phase
 	// update
-	deps, changed := r.update(preAccept.cmds, preAccept.deps, preAccept.repId)
+	deps, changed := r.updateDependencies(preAccept.cmds, preAccept.deps, preAccept.repId)
 	// set cmd
 	r.InstanceMatrix[preAccept.repId][preAccept.insId] = &Instance{
 		cmds:   preAccept.cmds,
@@ -127,54 +127,49 @@ func (r *Replica) findDependencies(cmds []cmd.Command) []InstanceIdType {
 
 	for i := range r.InstanceMatrix {
 		instances := r.InstanceMatrix[i]
+		start := r.MaxInstanceNum[i] - 1
 
-		for id := r.MaxInstanceNum[i] - 1; id > 0; id-- {
-			if instances[id] == nil {
-				continue
-			}
-
-			if r.StateMac.HaveConflicts(cmds, instances[id].cmds) {
-				deps[i] = id
-				break
-			}
+		if conflict, ok := r.scanConflicts(instances, cmds, start, 0); ok {
+			deps[i] = conflict
 		}
 	}
 
 	return deps
 }
 
-func (r *Replica) update(cmds []cmd.Command, deps []InstanceIdType, repId int) ([]InstanceIdType, bool) {
+func (r *Replica) updateDependencies(cmds []cmd.Command, deps []InstanceIdType, from int) ([]InstanceIdType, bool) {
 	changed := false
 
-	for rep := 0; rep < r.Size; rep++ {
-		// We don't need to update deps here because
-		// - it's from remote instance and
-		// - we know that it knows latest dependency for itself.
-		if r.Id != repId && rep == repId {
+	for curr := range r.InstanceMatrix {
+		// short cut here, the sender knows the latest dependencies for itself
+		if curr == from {
 			continue
 		}
 
-		repInst := r.InstanceMatrix[rep]
-		InstId := r.MaxInstanceNum[rep] - 1
+		instances := r.InstanceMatrix[curr]
+		start, end := r.MaxInstanceNum[curr]-1, deps[curr]
 
-		for ; InstId > deps[rep]; InstId-- {
-			if repInst[InstId] == nil {
-				continue
-			}
-			// we only need to find the highest instance in conflict
-			if r.StateMac.HaveConflicts(cmds, repInst[InstId].cmds) {
-				changed = true
-				break
-			}
-		}
-		// if InstId > original dep, we found newer conflicted instance;
-		// if InstId <= original dep, we didn't find any new conflict;
-		if InstId > deps[rep] {
-			deps[rep] = InstId
+		if conflict, ok := r.scanConflicts(instances, cmds, start, end); ok {
+			changed = true
+			deps[curr] = conflict
 		}
 	}
 
 	return deps, changed
+}
+
+func (r *Replica) scanConflicts(instances []*Instance, cmds []cmd.Command, start InstanceIdType, end InstanceIdType) (InstanceIdType, bool) {
+	for id := start; id > end; id-- {
+		if instances[id] == nil {
+			continue
+		}
+		// we only need to find the highest instance in conflict
+		if r.StateMac.HaveConflicts(cmds, instances[id].cmds) {
+			return InstanceIdType(id), true
+		}
+	}
+
+	return 0, false
 }
 
 func (r *Replica) union(deps1, deps2 []InstanceIdType) ([]InstanceIdType, bool) {
