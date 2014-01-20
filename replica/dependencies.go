@@ -2,18 +2,18 @@ package replica
 
 type dependencies []InstanceIdType
 
-// union unions the dep into the receiver
-func (d dependencies) union(toUnion dependencies) bool {
+// union unions the deps into the receiver
+func (d dependencies) union(other dependencies) bool {
+	if len(d) != len(other) {
+		panic("union: size different!")
+	}
+
 	same := true
 	for i := range d {
-		if len(toUnion) < i {
-			break
-		}
-
-		if d[i] != toUnion[i] {
+		if d[i] != other[i] {
 			same = false
-			if d[i] < toUnion[i] {
-				d[i] = toUnion[i]
+			if d[i] < other[i] {
+				d[i] = other[i]
 			}
 		}
 	}
