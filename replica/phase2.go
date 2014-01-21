@@ -4,7 +4,6 @@ package replica
 
 import (
 	"fmt"
-	"strconv"
 )
 
 // instId is an id of the already updated instance
@@ -87,8 +86,9 @@ func (r *Replica) recvAcceptReply(ar *AcceptReply, messageChan chan Message) {
 func (r *Replica) sendCommit(replicaId int, instanceId InstanceId, messageChan chan Message) {
 	instance := r.InstanceMatrix[replicaId][instanceId]
 	if instance == nil {
-		// shouldn't get here
-		panic("shouldn't get here, replicaId = " + strconv.Itoa(replicaId) + " instanceId = " + strconv.Itoa(int(instanceId)))
+		msg := fmt.Sprintf("shouldn't get here, replicaId = %d, instanceId = %d",
+			replicaId, instanceId)
+		panic(msg)
 	}
 
 	if instance.status != committed {
