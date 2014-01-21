@@ -70,7 +70,7 @@ func (b *Ballot) getNumber() uint64 {
 	return b.number
 }
 
-func (b *Ballot) setRId(rId int) {
+func (b *Ballot) setReplicaId(rId int) {
 	b.replicaId = uint8(rId)
 }
 
