@@ -13,8 +13,8 @@ const (
 
 // a bookkeeping for infos like maxBallot, # of nack, # of ok, etc
 type InstanceInfo struct {
-	preAcceptCount  int
-	needAcceptPhase bool
+	preAcceptCount int
+	isFastPath     bool
 
 	acceptNackCount int
 	acceptCount     int
@@ -54,31 +54,69 @@ func (i *Instance) processPreAcceptReply(par *PreAcceptReply, quorum, fastQuorum
 
 	if update := i.unionDeps(par.deps); !update {
 		if i.preAcceptCount() > 1 {
-			i.setNeedAcceptPhase(true)
+			i.setFastPath(false)
 		}
 	}
 
-	if i.preAcceptCount() >= quorum-1 && i.needAcceptPhase() {
+	if i.preAcceptCount() >= quorum-1 && !i.isFastPath() {
 		i.status = accepted
 	}
 
-	if i.preAcceptCount() == fastQuorum && !i.needAcceptPhase() {
+	if i.preAcceptCount() == fastQuorum && i.isFastPath() {
 		i.status = committed
 	}
 
 	return i.status
 }
 
+func (i *Instance) processAccept(a *Accept) bool {
+	if i.isEqualOrAfterStatus(accepted) || a.ballot.Compare(i.ballot) < 0 {
+		return false
+	}
+
+	i.status = accepted
+	i.cmds = a.cmds
+	i.deps = a.deps
+	i.ballot = a.ballot
+	return true
+}
+
+func (i *Instance) processAcceptReply(ar *AcceptReply, quorum int) bool {
+	if i.isAfterStatus(accepted) {
+		// we've already moved on, this reply is a delayed one
+		// so just ignore it
+		// TODO: maybe we can have some warning message here
+		return false
+	}
+	i.info.acceptCount++
+	if i.info.acceptCount >= quorum-1 {
+		i.status = committed
+		return true
+	}
+	return false
+}
+
+func (i *Instance) processCommit(c *Commit) bool {
+	if i.status >= committed { // ignore the message
+		return false
+	}
+
+	i.cmds = c.cmds
+	i.deps = c.deps
+	i.status = committed
+	return true
+}
+
 func (i *Instance) preAcceptCount() int {
 	return i.info.preAcceptCount
 }
 
-func (i *Instance) needAcceptPhase() bool {
-	return i.info.needAcceptPhase
+func (i *Instance) isFastPath() bool {
+	return i.info.isFastPath
 }
 
-func (i *Instance) setNeedAcceptPhase(need bool) {
-	i.info.needAcceptPhase = need
+func (i *Instance) setFastPath(ok bool) {
+	i.info.isFastPath = ok
 }
 
 func (i *Instance) unionDeps(deps dependencies) bool {
@@ -87,4 +125,8 @@ func (i *Instance) unionDeps(deps dependencies) bool {
 
 func (i *Instance) isAfterStatus(status int8) bool {
 	return i.status > status
+}
+
+func (i *Instance) isEqualOrAfterStatus(status int8) bool {
+	return i.status >= status
 }
