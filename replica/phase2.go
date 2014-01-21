@@ -16,6 +16,8 @@ func (r *Replica) sendAccept(replicaId int, instanceId InstanceId, messageChan c
 		panic("shouldn't get here, replicaId = " + strconv.Itoa(replicaId) + " instanceId = " + strconv.Itoa(int(instanceId)))
 	}
 	inst.status = accepted
+	inst.info.acceptCount = 0
+	inst.info.acceptNackCount = 0
 
 	// TODO: persistent store the status
 	accept := &Accept{

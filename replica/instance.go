@@ -25,7 +25,7 @@ type InstanceInfo struct {
 }
 
 type RecoveryInfo struct {
-	preAcceptCount int
+	hasCommandCount int
 }
 
 type Instance struct {

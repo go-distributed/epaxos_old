@@ -25,22 +25,28 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 	}
 
 	// TODO: before we send the message, we need to record and sync it in disk/persistent.
+	r.sendPreAccept(propose.cmds, deps, instNo, messageChan)
+}
+
+func (r *Replica) sendPreAccept(cmds []cmd.Command, deps dependencies, i InstanceId, m chan Message) {
+	inst := r.InstanceMatrix[r.Id][i]
+	inst.info.preAcceptCount = 0
+	inst.info.needAcceptPhase = false
 
 	// send PreAccept
 	preAccept := &PreAccept{
-		cmds:       propose.cmds,
+		cmds:       cmds,
 		deps:       deps,
 		replicaId:  r.Id,
-		instanceId: instNo,
+		instanceId: i,
 	}
 
 	// fast quorum
 	go func() {
 		for i := 0; i < r.fastQuorumSize(); i++ {
-			messageChan <- preAccept
+			m <- preAccept
 		}
 	}()
-
 }
 
 func (r *Replica) recvPreAccept(preAccept *PreAccept, messageChan chan Message) {

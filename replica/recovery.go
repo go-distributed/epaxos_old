@@ -2,15 +2,13 @@ package replica
 
 import (
 	"fmt"
-
-	cmd "github.com/go-epaxos/epaxos/command"
 )
 
 var _ = fmt.Printf
 
 func (r *Replica) sendPrepare(L int, instanceId InstanceId, messageChan chan Message) {
 	if r.InstanceMatrix[L][instanceId] == nil {
-		// TODO: we need to commit an instance that doesn't exist.
+		// TODO: we need to prepare an instance that doesn't exist.
 		r.InstanceMatrix[L][instanceId] = &Instance{
 			// TODO:
 			// Assumed no-op to be nil here.
@@ -56,20 +54,30 @@ func (r *Replica) recvPrepare(pp *Prepare, messageChan chan Message) {
 		r.sendPrepareReply(pr, messageChan)
 		return
 	}
+
 	// we have some info about the instance
 	pr := &PrepareReply{
 		status:     inst.status,
-		cmds:       inst.cmds,
-		deps:       inst.deps,
 		replicaId:  pp.replicaId,
 		instanceId: pp.instanceId,
 	}
-	if pp.ballot.Compare(inst.ballot) >= 0 {
-		pr.ok = true
-		inst.ballot = pp.ballot
-	} else {
-		pr.ok = false
+
+	if inst.isAfterStatus(preAccepted) {
+		pr.cmds = inst.cmds
+		pr.deps = inst.deps
 	}
+
+	if inst.status == preAccepted {
+		if pp.ballot.Compare(inst.ballot) > 0 {
+			pr.cmds = inst.cmds
+			pr.deps = inst.deps
+			pr.ok = true
+			inst.ballot = pp.ballot
+		} else {
+			pr.ok = false
+		}
+	}
+
 	pr.ballot = inst.ballot
 	r.sendPrepareReply(pr, messageChan)
 }
@@ -88,24 +96,28 @@ func (r *Replica) recvPrepareReply(p *PrepareReply, m chan Message) {
 		return
 	}
 
-	// ignore nack and old replies
-	if p.ok && p.ballot == inst.ballot {
-		if inst.info.prepareCount++; inst.info.preAcceptCount < r.Size/2 {
-			return
-		}
+	if inst.isAfterStatus(preAccepted) {
+		return
 	}
 
-	// for all replies, we only need to keep the ones with highest ballot number
-	// inst.ppreplies = r.updateMaxBallot()
+	if p.status > preAccepted {
+		inst.cmds = p.cmds
+		inst.deps = p.deps
+		inst.status = p.status
+		inst.ballot = p.ballot
 
-	// majority replies
-	// if inst.ppreplies.find( committed )
-	// else if inst.ppreplies.find( accepted )
-	// else if inst.ppreplies ( >= r.Size/2, including itself) preaccepted for default balllot
-	// else if inst.ppreplies.find( preaccepted )
-	// else default: no-op
-}
+		switch p.status {
+		case committed:
+			// send commit
+		case accepted:
+			// send accept
+		}
+		return
+	}
 
-func (r *Replica) updateRecovery(cmds []cmd.Command, deps []InstanceId, status int) {
+	if p.status == preAccepted {
 
+	} else {
+		// no op
+	}
 }
