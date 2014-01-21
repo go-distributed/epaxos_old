@@ -53,6 +53,7 @@ func (r *Replica) QuorumSize() int {
 func (r *Replica) updateMaxInstanceNum(replicaId int, instanceId InstanceId) bool {
 	if r.MaxInstanceNum[replicaId] <= instanceId {
 		r.MaxInstanceNum[replicaId] = instanceId + 1
+		return true
 	}
 	return false
 }
