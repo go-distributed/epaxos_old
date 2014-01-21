@@ -9,7 +9,7 @@ import (
 // Test if the Accept messages can be sent correctly
 func TestSendAccept(t *testing.T) {
 	_, r, messageChan, propose := phase2TestSetup(5)
-
+	r.InstanceMatrix[r.Id][2].status = accepted
 	// done setup, now send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 
@@ -32,7 +32,7 @@ func TestSendAccept(t *testing.T) {
 // Test if we can accpet the Accept messages correctly
 func TestRecvAcceptOk(t *testing.T) {
 	g, r, messageChan, _ := phase2TestSetup(5)
-
+	r.InstanceMatrix[r.Id][2].status = accepted
 	// done setup, now send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 	for i := 0; i < r.Size/2; i++ {
@@ -53,7 +53,7 @@ func TestRecvAcceptOk(t *testing.T) {
 // Test if we reject the Accepts correctly
 func TestRecvAcceptNackBallot(t *testing.T) {
 	g, r, messageChan, _ := phase2TestSetup(5)
-
+	r.InstanceMatrix[r.Id][2].status = accepted
 	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 	for i := 0; i < r.Size/2; i++ {
@@ -77,7 +77,7 @@ func TestRecvAcceptNackBallot(t *testing.T) {
 // Test if we reject the Accepts correctly
 func TestRecvAcceptNackStatus(t *testing.T) {
 	g, r, messageChan, _ := phase2TestSetup(5)
-
+	r.InstanceMatrix[r.Id][2].status = accepted
 	// done setup, let send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 
@@ -107,6 +107,7 @@ func TestRecvAcceptNackStatus(t *testing.T) {
 func TestSendCommit(t *testing.T) {
 	_, r, messageChan, propose := phase2TestSetup(5)
 
+	r.InstanceMatrix[r.Id][2].status = committed
 	// done setup, let's send Commits
 	r.sendCommit(r.Id, 2, messageChan)
 
@@ -131,6 +132,7 @@ func TestSendCommit(t *testing.T) {
 func TestRecvCommitOk(t *testing.T) {
 	g, r, messageChan, propose := phase2TestSetup(5)
 
+	r.InstanceMatrix[r.Id][2].status = committed
 	// done setup, let's send Commits
 	r.sendCommit(r.Id, 2, messageChan)
 
@@ -160,6 +162,7 @@ func TestRecvCommitOk(t *testing.T) {
 func TestRecvCommitIgnore(t *testing.T) {
 	g, r, messageChan, propose := phase2TestSetup(5)
 
+	r.InstanceMatrix[r.Id][2].status = committed
 	// done setup, let's send Commits
 	r.sendCommit(r.Id, 2, messageChan)
 
@@ -216,7 +219,7 @@ func TestRecvCommitIgnore(t *testing.T) {
 // Test send Accept and then Commit messages
 func TestAcceptAndCommit(t *testing.T) {
 	g, r, messageChan, _ := phase2TestSetup(5)
-
+	r.InstanceMatrix[r.Id][2].status = accepted
 	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
 
@@ -241,6 +244,7 @@ func TestAcceptAndCommit(t *testing.T) {
 // Test send Accept but no Commit messages
 func TestAcceptAndAbortCommit(t *testing.T) {
 	g, r, messageChan, _ := phase2TestSetup(5)
+	r.InstanceMatrix[r.Id][2].status = accepted
 
 	// done setup, let's send Accepts
 	r.sendAccept(r.Id, 2, messageChan)
