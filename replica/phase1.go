@@ -31,7 +31,7 @@ func (r *Replica) recvPropose(propose *Propose, messageChan chan Message) {
 func (r *Replica) sendPreAccept(cmds []cmd.Command, deps dependencies, i InstanceId, m chan Message) {
 	inst := r.InstanceMatrix[r.Id][i]
 	inst.info.preAcceptCount = 0
-	inst.info.needAcceptPhase = false
+	inst.info.isFastPath = true
 
 	// send PreAccept
 	preAccept := &PreAccept{
