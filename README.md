@@ -1,5 +1,6 @@
 epaxos
 ======
+[![Build Status](https://drone.io/github.com/go-epaxos/epaxos/status.png)](https://drone.io/github.com/go-epaxos/epaxos/latest)
 
 A Go implementation of epaxos
 
