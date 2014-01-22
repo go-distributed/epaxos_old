@@ -146,7 +146,7 @@ func (r *Replica) recvPrepareReply(p *PrepareReply, m chan Message) {
 
 	// send Accepts or PreAccepts
 	if rInfo.status == preAccepted {
-		// if "N/2 idendital" {
+		// if "N/2 identical" {
 		//         sendAccept()
 		//         return
 		// }
