@@ -17,6 +17,9 @@ func (r *Replica) sendAccept(replicaId int, instanceId InstanceId, messageChan c
 			replicaId, instanceId)
 		panic(msg)
 	}
+	instance.status = accepted
+	instance.info.acceptCount = 0
+	instance.info.acceptNackCount = 0
 
 	if instance.status != accepted {
 		msg := fmt.Sprintf("[sendAccept] unaccepted instance %v", instanceId)

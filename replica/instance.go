@@ -25,7 +25,7 @@ type InstanceInfo struct {
 }
 
 type RecoveryInfo struct {
-	preAcceptCount int
+	preAcceptedCount int
 }
 
 type Instance struct {
@@ -36,8 +36,14 @@ type Instance struct {
 	info   *InstanceInfo
 }
 
+func NewRecoveryInfo() *RecoveryInfo {
+	return &RecoveryInfo{}
+}
+
 func NewInstanceInfo() *InstanceInfo {
-	return &InstanceInfo{}
+	return &InstanceInfo{
+		isFastPath: true,
+	}
 }
 
 func NewInstance(cmds []cmd.Command, deps dependencies, status int8) *Instance {
@@ -121,6 +127,10 @@ func (i *Instance) setFastPath(ok bool) {
 
 func (i *Instance) unionDeps(deps dependencies) bool {
 	return i.deps.union(deps)
+}
+
+func (i *Instance) isAtStatus(status int8) bool {
+	return i.status == status
 }
 
 func (i *Instance) isAfterStatus(status int8) bool {
