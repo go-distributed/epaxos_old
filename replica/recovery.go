@@ -7,6 +7,7 @@ import (
 var _ = fmt.Printf
 
 func (r *Replica) sendPrepare(L int, instanceId InstanceId, messageChan chan Message) {
+	noop := false
 	if r.InstanceMatrix[L][instanceId] == nil {
 		// TODO: we need to prepare an instance that doesn't exist.
 		r.InstanceMatrix[L][instanceId] = &Instance{
@@ -19,9 +20,14 @@ func (r *Replica) sendPrepare(L int, instanceId InstanceId, messageChan chan Mes
 			ballot: r.makeInitialBallot(),
 			info:   NewInstanceInfo(),
 		}
+		noop = true
 	}
 
 	inst := r.InstanceMatrix[L][instanceId]
+
+	if !noop {
+		inst.info.recovery.hasCommandCount = 1
+	}
 
 	inst.ballot.incNumber()
 	inst.ballot.setReplicaId(r.Id)
@@ -96,23 +102,52 @@ func (r *Replica) recvPrepareReply(p *PrepareReply, m chan Message) {
 		return
 	}
 
-	if inst.isAfterStatus(preAccepted) {
+	if inst.status >= committed {
+		// committed or executed.
+		// this is a delayed message. ignored!
 		return
 	}
 
-	if p.status > preAccepted {
-		inst.cmds = p.cmds
-		inst.deps = p.deps
-		inst.status = p.status
-		inst.ballot = p.ballot
-
-		switch p.status {
-		case committed:
+	switch inst.status {
+	case accepted:
+		if p.status == committed {
+			// update instance
 			// send commit
-		case accepted:
-			// send accept
+			return
 		}
-		return
+	case preAccepted:
+		if p.status > preAccepted {
+			inst.cmds = p.cmds
+			inst.deps = p.deps
+			inst.status = p.status
+			inst.ballot = p.ballot
+
+			switch p.status {
+			case committed:
+				// send commit
+			case accepted:
+				// send accept
+			}
+			return
+		}
+
+		// CHANGE:
+		// We need N/2 pre-accepted replies to union and send pre-accept.
+		// When initial leader received N/2 pre-accepted messages, he would either go on fast path (commit) or slow path (accept). Here we can be delegated to go slow path (accept)
+		if p.status == preAccepted {
+			if p.cmds == nil {
+				panic("")
+			}
+			inst.info.recovery.hasCommandCount++
+			// do union
+			if inst.info.recovery.hasCommandCount == r.QuorumSize()-1 {
+				// send preaccept
+			}
+		}
+	case -1:
+
+	default:
+		panic("")
 	}
 
 	if p.status == preAccepted {
