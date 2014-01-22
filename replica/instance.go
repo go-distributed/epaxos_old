@@ -25,7 +25,7 @@ type InstanceInfo struct {
 }
 
 type RecoveryInfo struct {
-	hasCommandCount int
+	preAcceptedCount int
 }
 
 type Instance struct {
@@ -34,6 +34,10 @@ type Instance struct {
 	status int8
 	ballot *Ballot
 	info   *InstanceInfo
+}
+
+func NewRecoveryInfo() *RecoveryInfo {
+	return &RecoveryInfo{}
 }
 
 func NewInstanceInfo() *InstanceInfo {
