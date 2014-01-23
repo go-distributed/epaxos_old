@@ -61,7 +61,7 @@ func TestRecvPrepareNoInstance(t *testing.T) {
 		pr := (<-messageChan).(*PrepareReply)
 		if !reflect.DeepEqual(pr, &PrepareReply{
 			ok:         true,
-			ballot:     pp.ballot,
+			ballot:     &Ballot{0, 0, uint8(i)}, // receiver's initial ballot
 			status:     -1,
 			cmds:       nil,
 			deps:       make([]InstanceId, r.Size), // TODO: makeInitialDeps
@@ -129,7 +129,7 @@ func TestRecvPrepareAccept(t *testing.T) {
 	g, r, messageChan := recoveryTestSetup(5)
 	r.sendPrepare(0, conflictNotFound+2, messageChan)
 
-	// create instance in receivers, and make larger ballots
+	// create instance in receivers, and make smaller ballots
 	for i := 1; i < r.Size; i++ {
 		g[i].InstanceMatrix[0][conflictNotFound+2] = &Instance{
 			status: accepted,
@@ -156,7 +156,7 @@ func TestRecvPrepareAccept(t *testing.T) {
 				cmd.Command("paxos"),
 			},
 			deps:       []InstanceId{1, 0, 0, 0, 0},
-			ballot:     r.makeInitialBallot().getIncNumCopy(), // sender's ballot
+			ballot:     r.makeInitialBallot(), // receiver's initial ballot
 			replicaId:  0,
 			instanceId: conflictNotFound + 2,
 		}) {

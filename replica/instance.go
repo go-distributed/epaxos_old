@@ -5,7 +5,8 @@ import (
 )
 
 const (
-	preAccepted int8 = iota
+	preparing int8 = iota
+	preAccepted
 	accepted
 	committed
 	executed
@@ -20,20 +21,25 @@ type InstanceInfo struct {
 	acceptCount     int
 
 	prepareCount int
-
-	recovery *RecoveryInfo
 }
 
 type RecoveryInfo struct {
-	preAcceptedCount int
-}
+	preAcceptCount  int
+	replyCount      int
+	maxAcceptBallot *Ballot
 
-type Instance struct {
 	cmds   []cmd.Command
 	deps   dependencies
 	status int8
-	ballot *Ballot
-	info   *InstanceInfo
+}
+
+type Instance struct {
+	cmds         []cmd.Command
+	deps         dependencies
+	status       int8
+	ballot       *Ballot
+	info         *InstanceInfo
+	recoveryInfo *RecoveryInfo
 }
 
 func NewRecoveryInfo() *RecoveryInfo {
@@ -103,7 +109,7 @@ func (i *Instance) processAcceptReply(ar *AcceptReply, quorum int) bool {
 }
 
 func (i *Instance) processCommit(c *Commit) bool {
-	if i.status >= committed { // ignore the message
+	if i.isEqualOrAfterStatus(committed) { // ignore the message
 		return false
 	}
 
