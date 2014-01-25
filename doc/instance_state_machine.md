@@ -64,3 +64,11 @@ Nil Status Explained
 An instance's status is NilStatus when:
 - it doesn't exist, or
 - it doesn't know any information about this instance except its ballot.
+
+Sender and receiver: Timeout & Dependency Required
+------
+In our graph, we converge sender and receiver state into the same status for simplification.
+Nonetheless, it's important to differentiate sender and receiver.
+
+One case is that when it enters into preAccepted state, a sender only proceeds towards preparing state on timing out, not dependency required;
+On the other hand, the receiver proceeds on dependency required.
